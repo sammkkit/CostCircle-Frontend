@@ -23,4 +23,5 @@ val networkModule = module {
             okHttpClient = get()
         )
     }
+
 }

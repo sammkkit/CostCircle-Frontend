@@ -24,6 +24,7 @@ class AuthInterceptor(
         if (response.code == 401) {
             sessionManager.clear()
         }
+        response.close()
 
         return chain.proceed(request)
     }
