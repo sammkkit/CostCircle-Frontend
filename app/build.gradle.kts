@@ -43,6 +43,7 @@ android {
 }
 
 dependencies {
+    implementation(libs.androidx.compose.foundation)
     //retrofit
     val retrofit_version = "2.9.0" // Check for the latest version
     val okhttp_version = "4.12.0" // Check for the latest version

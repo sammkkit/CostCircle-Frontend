@@ -7,5 +7,7 @@ fun SettlementDto.toDomain(): Settlement =
     Settlement(
         fromUserId = fromUserId,
         toUserId = toUserId,
-        amount = amount
+        amount = amount,
+        fromName = fromName,
+        toName = toName
     )

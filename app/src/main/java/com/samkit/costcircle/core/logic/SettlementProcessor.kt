@@ -1,6 +1,7 @@
 package com.samkit.costcircle.core.logic
 
 
+import android.util.Log
 import com.samkit.costcircle.core.model.Settlement
 import com.samkit.costcircle.core.model.SettlementSummary
 import com.samkit.costcircle.core.model.UserBalance
@@ -20,13 +21,15 @@ object SettlementProcessor {
             it.fromUserId
         }
 
-        return balances.map { balance ->
+        val summary  = balances.map { balance ->
             SettlementSummary(
                 userId = balance.userId,
                 netAmount = MoneyUtils.round(balance.balance),
                 settlements = settlementsByUser[balance.userId].orEmpty()
             )
         }
+        Log.d("SettlementProcessor", "SettlementProcessor.buildSummaries: $summary")
+        return summary
     }
 
     /**

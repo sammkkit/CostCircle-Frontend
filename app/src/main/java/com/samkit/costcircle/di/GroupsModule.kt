@@ -3,6 +3,7 @@ package com.samkit.costcircle.di
 
 import com.samkit.costcircle.data.group.Repository.GroupRepository
 import com.samkit.costcircle.data.group.remote.groupApiService
+import com.samkit.costcircle.ui.screens.groups.viewModels.GroupDetailsViewModel
 import com.samkit.costcircle.ui.screens.groups.viewModels.GroupsViewModel
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
@@ -22,10 +23,18 @@ val groupsModule = module {
         )
     }
 
-    // ViewModel (MVI)
+    // ViewModel
     viewModel {
         GroupsViewModel(
             repository = get()
         )
     }
+    viewModel { (groupId: Long) ->
+        GroupDetailsViewModel(
+            groupId = groupId,
+            repository = get(),
+            sessionManager = get()
+        )
+    }
+
 }

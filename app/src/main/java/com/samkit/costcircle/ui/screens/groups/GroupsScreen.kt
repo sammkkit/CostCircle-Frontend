@@ -33,7 +33,7 @@ import org.koin.androidx.compose.koinViewModel
 fun GroupsScreen(
     modifier: Modifier = Modifier,
     viewModel: GroupsViewModel = koinViewModel(),
-    onGroupClick: (Int, String) -> Unit
+    onGroupClick: (Long, String) -> Unit
 ) {
     val uiState by viewModel.state.collectAsState()
     val context = LocalContext.current

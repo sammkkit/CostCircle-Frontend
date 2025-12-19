@@ -15,7 +15,7 @@ sealed interface Destination {
     // One-off screens
     @Serializable data object AddExpense : Destination, NavKey
     @Serializable
-    data class GroupDetails(val groupId: Int, val groupName: String) : Destination,NavKey
+    data class GroupDetails(val groupId: Long, val groupName: String) : Destination,NavKey
 
     // Main
     @Serializable data object Main : Destination,NavKey

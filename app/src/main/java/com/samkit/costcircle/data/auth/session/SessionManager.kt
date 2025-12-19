@@ -11,6 +11,12 @@ class SessionManager(context: Context) {
     fun saveToken(token: String) {
         prefs.edit().putString("jwt_token", token).apply()
     }
+    fun saveUserId(userId: Long) {
+        prefs.edit().putLong("user_id", userId).apply()
+    }
+
+    fun getUserId(): Long =
+        prefs.getLong("user_id", 0)
 
     fun getToken(): String? =
         prefs.getString("jwt_token", null)

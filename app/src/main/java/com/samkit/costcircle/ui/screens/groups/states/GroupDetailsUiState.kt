@@ -1,5 +1,6 @@
 package com.samkit.costcircle.ui.screens.groups.states
 
+import com.samkit.costcircle.core.model.SettlementSummary
 import com.samkit.costcircle.ui.screens.groups.models.ExpenseUiModel
 
 sealed interface GroupDetailsUiState {
@@ -7,6 +8,6 @@ sealed interface GroupDetailsUiState {
     data object Empty : GroupDetailsUiState
     data class Error(val message: String) : GroupDetailsUiState
     data class Success(
-        val expenses: List<ExpenseUiModel>
+        val summaries: List<SettlementSummary>
     ) : GroupDetailsUiState
 }

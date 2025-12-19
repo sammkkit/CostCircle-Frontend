@@ -86,10 +86,11 @@ fun AppNavHost(
             entry<Destination.GroupDetails> { key ->
                 GroupDetailsScreen(
                     groupName = key.groupName,
+                    groupId = key.groupId,
                     onBack = {
                         backstack.removeLastOrNull()
                     },
-                    onAddExpenseClick = {
+                    onAddExpense = {
                         backstack.add(Destination.AddExpense)
                     }
                 )

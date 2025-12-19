@@ -14,10 +14,11 @@ class AuthRepository(
         val response = api.login(
             LoginRequestDto(email, password)
         )
-
         sessionManager.saveToken(response.token)
+        sessionManager.saveUserId(response.user.id)
     }
 
+    fun getCurrentUserId(): Long = sessionManager.getUserId()
     suspend fun register(
         name: String,
         email: String,

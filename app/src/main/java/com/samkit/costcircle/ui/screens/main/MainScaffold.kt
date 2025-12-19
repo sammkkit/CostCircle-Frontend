@@ -24,7 +24,7 @@ import com.samkit.costcircle.ui.screens.groups.GroupsScreen
 fun MainScaffold(
     onLogout: () -> Unit,
     onAddExpenseClick: () -> Unit,
-    onGroupClick: (Int, String) -> Unit
+    onGroupClick: (Long, String) -> Unit
 
 ) {
     var selectedTab by remember {

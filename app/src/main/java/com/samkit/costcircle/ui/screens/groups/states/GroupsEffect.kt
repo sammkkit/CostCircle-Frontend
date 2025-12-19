@@ -2,7 +2,7 @@ package com.samkit.costcircle.ui.screens.groups.states
 
 sealed interface GroupsEffect {
     data class NavigateToGroup(
-        val groupId: Int,
+        val groupId: Long,
         val name: String
     ) : GroupsEffect
 
