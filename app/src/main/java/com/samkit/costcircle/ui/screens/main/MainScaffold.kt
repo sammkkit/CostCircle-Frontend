@@ -56,7 +56,7 @@ fun MainScaffold(
     ) {paddingValues ->
         when (selectedTab) {
             Destination.Groups -> GroupsScreen(
-                Modifier.padding(paddingValues =paddingValues ),
+                modifier= Modifier.padding(paddingValues =paddingValues ),
                 onGroupClick = onGroupClick
             )
             Destination.Account -> AccountScreen(onLogout = onLogout)

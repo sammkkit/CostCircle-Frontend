@@ -44,6 +44,8 @@ android {
 
 dependencies {
     implementation(libs.androidx.compose.foundation)
+    implementation(libs.androidx.compose.animation.core)
+    implementation(libs.androidx.room.ktx)
     //retrofit
     val retrofit_version = "2.9.0" // Check for the latest version
     val okhttp_version = "4.12.0" // Check for the latest version
@@ -51,7 +53,8 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:${okhttp_version}")
     implementation("com.squareup.retrofit2:converter-gson:${retrofit_version}")
     implementation("com.squareup.okhttp3:logging-interceptor:${okhttp_version}")
-
+//    icons
+    implementation("androidx.compose.material:material-icons-extended")
     //koin
     // Koin core
     // Core Koin

@@ -1,81 +1,77 @@
-package com.samkit.costcircle.ui.screens.groups.viewModels
+package com.samkit.costcircle.ui.screens.groups
 
-import androidx.compose.foundation.rememberPlatformOverscrollFactory
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.samkit.costcircle.data.group.Repository.GroupRepository
-import com.samkit.costcircle.ui.screens.groups.components.dummyGroups
-import com.samkit.costcircle.ui.screens.groups.mappers.toUiModel
-import com.samkit.costcircle.ui.screens.groups.models.GroupUiModel
-import com.samkit.costcircle.ui.screens.groups.states.GroupsEffect
-import com.samkit.costcircle.ui.screens.groups.states.GroupsEvent
-import com.samkit.costcircle.ui.screens.groups.states.GroupsUiState
+import com.samkit.costcircle.data.group.repository.GroupRepository
+import com.samkit.costcircle.ui.screens.groups.states.GroupsContract
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-
+import kotlin.math.absoluteValue
 
 class GroupsViewModel(
     private val repository: GroupRepository
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow<GroupsUiState>(GroupsUiState.Loading)
-    val state = _state.asStateFlow()
+    private val _state = MutableStateFlow<GroupsContract.State>(GroupsContract.State.Empty)
+    val state: StateFlow<GroupsContract.State> = _state.asStateFlow()
 
-    private val _effect = MutableSharedFlow<GroupsEffect>()
-    val effect = _effect.asSharedFlow()
+    private val _effect = Channel<GroupsContract.Effect>(Channel.BUFFERED)
+    val effect = _effect.receiveAsFlow()
 
-    init {
-        loadGroups()
-    }
+//    init {
+//        onEvent(GroupsContract.Event.Load)
+//    }
 
-    fun onEvent(event: GroupsEvent) {
+    fun onEvent(event: GroupsContract.Event) {
         when (event) {
-            GroupsEvent.Retry -> loadGroups()
-            is GroupsEvent.GroupClicked -> {
-                viewModelScope.launch {
-                    _effect.emit(
-                        GroupsEffect.NavigateToGroup(
-                            groupId = event.groupId,
-                            name = event.name
-                        )
+            GroupsContract.Event.Load,
+            GroupsContract.Event.Retry -> loadGroups()
+
+            is GroupsContract.Event.GroupClicked -> {
+                sendEffect(
+                    GroupsContract.Effect.NavigateToGroup(
+                        event.groupId,
+                        event.groupName
                     )
-                    _effect.emit(
-                        GroupsEffect.CreateToastWhenGroupClicked(
-                            message = "Clicked on ${event.name}"
-                        )
-                    )
-                }
+                )
             }
-            else -> {}
         }
     }
 
+    // GroupsViewModel.kt
     private fun loadGroups() {
         viewModelScope.launch {
-            _state.value = GroupsUiState.Loading
-            // repo call (mock or real)
-            repository.getGroups()
-                .catch {
-                    _state.value =
-                        GroupsUiState.Error("Failed to load groups")
+            if (_state.value is GroupsContract.State.Loading) return@launch
+            _state.value = GroupsContract.State.Loading
+
+            runCatching {
+                repository.getGroupsSummary()
+            }.onSuccess { groups ->
+                if (groups.isEmpty()) {
+                    _state.value = GroupsContract.State.Empty
+                } else {
+                    // Proper Production Calculation:
+                    val amounts = groups.map { it.netAmount ?: 0.0 }
+
+                    val owed = amounts.filter { it > 0 }.sum()
+                    val owe = amounts.filter { it < 0 }.sum().absoluteValue
+
+                    _state.value = GroupsContract.State.Success(
+                        groups = groups,
+                        totalOwedToYou = owed,
+                        totalYouOwe = owe
+                    )
                 }
-                .collect { groups ->
-                    val uiGroups = groups.map { it.toUiModel() }
-                    _state.value =
-                        if (uiGroups.isEmpty()) {
-                            GroupsUiState.Empty
-                        } else {
-                            GroupsUiState.Success(uiGroups)
-                        }
-                }
+            }.onFailure {
+                _state.value = GroupsContract.State.Error("Failed to load groups")
+            }
+        }
+    }
+
+    private fun sendEffect(effect: GroupsContract.Effect) {
+        viewModelScope.launch {
+            _effect.send(effect)
         }
     }
 }
-

@@ -1,24 +1,17 @@
-    package com.samkit.costcircle.data.group.remote
+package com.samkit.costcircle.data.group.remote
 
+import com.samkit.costcircle.data.group.dto.GroupSummaryDto
+import com.samkit.costcircle.data.group.dto.GroupFinancialSummaryDto
+import retrofit2.http.GET
+import retrofit2.http.Path
 
-    import com.samkit.costcircle.data.group.dto.BalanceDto
-    import com.samkit.costcircle.data.group.dto.GroupDto
-    import com.samkit.costcircle.data.group.dto.SettlementDto
-    import retrofit2.http.GET
-    import retrofit2.http.Path
+interface GroupApiService {
 
-    interface groupApiService {
+    @GET("groups/summary")
+    suspend fun getGroupsSummary(): List<GroupSummaryDto>
 
-        @GET("groups")
-        suspend fun getMyGroups(): List<GroupDto>
-
-        @GET("groups/{groupId}/balances")
-        suspend fun getGroupBalances(
-            @Path("groupId") groupId: Long
-        ): List<BalanceDto>
-
-        @GET("groups/{groupId}/settlements")
-        suspend fun getGroupSettlements(
-            @Path("groupId") groupId: Long
-        ): List<SettlementDto>
-    }
+    @GET("groups/{groupId}/financial-summary")
+    suspend fun getGroupFinancialSummary(
+        @Path("groupId") groupId: Long
+    ): GroupFinancialSummaryDto
+}

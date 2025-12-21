@@ -1,30 +1,28 @@
-package com.samkit.costcircle.data.group.Repository
+package com.samkit.costcircle.data.group.repository
 
-import com.samkit.costcircle.core.logic.SettlementProcessor
-import com.samkit.costcircle.core.model.Group
-import com.samkit.costcircle.core.model.SettlementSummary
-import com.samkit.costcircle.data.group.mappers.toDomain
-import com.samkit.costcircle.data.group.remote.groupApiService
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
+import com.samkit.costcircle.data.group.dto.GroupFinancialSummaryDto
+import com.samkit.costcircle.data.group.dto.GroupSummaryDto
+import com.samkit.costcircle.data.group.remote.GroupApiService
 
 class GroupRepository(
-    private val api: groupApiService
+    private val api: GroupApiService
 ) {
-    fun getGroups(): Flow<List<Group>> = flow {
-        val groups = api.getMyGroups().map { it.toDomain() }
-        emit(groups)
+
+    /**
+     * Groups (Home) screen
+     * User-centric summary per group
+     */
+    suspend fun getGroupsSummary(): List<GroupSummaryDto> {
+        return api.getGroupsSummary()
     }
-    suspend fun getGroupSettlementSummary(
+
+    /**
+     * Group details screen
+     * Group-wide financial settlements
+     */
+    suspend fun getGroupFinancialSummary(
         groupId: Long
-    ): List<SettlementSummary> {
-
-        val balances = api.getGroupBalances(groupId).map { it.toDomain() }
-        val settlements = api.getGroupSettlements(groupId).map { it.toDomain() }
-
-        return SettlementProcessor.buildSummaries(
-            balances = balances,
-            settlements = settlements
-        )
+    ): GroupFinancialSummaryDto {
+        return api.getGroupFinancialSummary(groupId)
     }
 }

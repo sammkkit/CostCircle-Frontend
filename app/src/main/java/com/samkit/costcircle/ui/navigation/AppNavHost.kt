@@ -3,8 +3,15 @@ package com.samkit.costcircle.ui.navigation
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
@@ -14,7 +21,7 @@ import com.samkit.costcircle.ui.screens.addExpense.AddExpenseScreen
 import com.samkit.costcircle.ui.screens.auth.AuthViewModel
 import com.samkit.costcircle.ui.screens.auth.LoginScreen
 import com.samkit.costcircle.ui.screens.auth.RegisterScreen
-import com.samkit.costcircle.ui.screens.groups.GroupDetailsScreen
+import com.samkit.costcircle.ui.screens.groupdetails.GroupDetailsScreen
 import com.samkit.costcircle.ui.screens.main.MainScaffold
 import org.koin.androidx.compose.koinViewModel
 
@@ -89,9 +96,6 @@ fun AppNavHost(
                     groupId = key.groupId,
                     onBack = {
                         backstack.removeLastOrNull()
-                    },
-                    onAddExpense = {
-                        backstack.add(Destination.AddExpense)
                     }
                 )
             }
