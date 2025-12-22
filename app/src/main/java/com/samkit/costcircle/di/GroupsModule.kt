@@ -4,7 +4,8 @@ package com.samkit.costcircle.di
 import com.samkit.costcircle.data.group.remote.GroupApiService
 import com.samkit.costcircle.data.group.repository.GroupRepository
 import com.samkit.costcircle.ui.screens.groupdetails.GroupDetailsViewModel
-import com.samkit.costcircle.ui.screens.groups.GroupsViewModel
+import com.samkit.costcircle.ui.screens.groupsList.GroupsViewModel
+import com.samkit.costcircle.ui.screens.newGroupAddition.viewModels.NewGroupViewModel
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
 import retrofit2.Retrofit
@@ -36,5 +37,11 @@ val groupsModule = module {
             sessionManager = get()
         )
     }
+    viewModel {
+        NewGroupViewModel(
+            repository = get()
+        )
+    }
+
 
 }

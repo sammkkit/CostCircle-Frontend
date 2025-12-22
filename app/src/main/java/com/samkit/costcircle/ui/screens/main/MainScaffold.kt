@@ -5,7 +5,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.FloatingActionButton
@@ -14,17 +13,17 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.*
-import androidx.compose.ui.Modifier
 import com.samkit.costcircle.ui.components.BottomBar
 import com.samkit.costcircle.ui.navigation.Destination
 import com.samkit.costcircle.ui.screens.account.AccountScreen
-import com.samkit.costcircle.ui.screens.groups.GroupsScreen
+import com.samkit.costcircle.ui.screens.groupsList.GroupsScreen
 
 @Composable
 fun MainScaffold(
     onLogout: () -> Unit,
     onAddExpenseClick: () -> Unit,
-    onGroupClick: (Long, String) -> Unit
+    onGroupClick: (Long, String) -> Unit,
+    onAddGroupClick: () -> Unit
 
 ) {
     var selectedTab by remember {
@@ -56,8 +55,9 @@ fun MainScaffold(
     ) {paddingValues ->
         when (selectedTab) {
             Destination.Groups -> GroupsScreen(
-                modifier= Modifier.padding(paddingValues =paddingValues ),
-                onGroupClick = onGroupClick
+                paddingMain = paddingValues,
+                onGroupClick = onGroupClick,
+                onAddGroupClick = onAddGroupClick
             )
             Destination.Account -> AccountScreen(onLogout = onLogout)
             else -> Unit

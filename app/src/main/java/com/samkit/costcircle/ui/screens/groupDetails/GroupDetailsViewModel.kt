@@ -4,11 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.samkit.costcircle.data.auth.session.SessionManager
 import com.samkit.costcircle.data.group.repository.GroupRepository
-import com.samkit.costcircle.ui.screens.groups.states.GroupsContract
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import org.koin.compose.koinInject
 
 class GroupDetailsViewModel(
     private val groupId: Long,

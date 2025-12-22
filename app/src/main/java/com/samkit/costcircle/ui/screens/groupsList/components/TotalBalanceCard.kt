@@ -1,4 +1,4 @@
-package com.samkit.costcircle.ui.screens.groups.components
+package com.samkit.costcircle.ui.screens.groupsList.components
 
 import com.yourapp.costcircle.ui.theme.GreenOwed
 import com.yourapp.costcircle.ui.theme.OrangeOwe
@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -40,10 +39,12 @@ fun TotalBalanceCard(owed: Double, owe: Double) {
 
     // Using surfaceContainerHigh and higher shadow for light mode visibility
     Surface(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+        modifier = Modifier.fillMaxWidth()
+            .padding(vertical = 0.dp)
+            ,
         shape = MaterialTheme.shapes.extraLarge,
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        shadowElevation = 8.dp
+        shadowElevation = 8.dp,
     ) {
         Column(
             modifier = Modifier

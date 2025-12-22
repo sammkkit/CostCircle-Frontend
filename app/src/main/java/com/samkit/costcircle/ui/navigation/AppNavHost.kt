@@ -23,6 +23,7 @@ import com.samkit.costcircle.ui.screens.auth.LoginScreen
 import com.samkit.costcircle.ui.screens.auth.RegisterScreen
 import com.samkit.costcircle.ui.screens.groupdetails.GroupDetailsScreen
 import com.samkit.costcircle.ui.screens.main.MainScaffold
+import com.samkit.costcircle.ui.screens.newGroupAddition.NewGroupAdditionScreen
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
@@ -87,6 +88,9 @@ fun AppNavHost(
                                 groupName = groupName
                             )
                         )
+                    },
+                    onAddGroupClick = {
+                        backstack.add(Destination.AddNewGroup)
                     }
                 )
             }
@@ -103,6 +107,13 @@ fun AppNavHost(
             entry<Destination.AddExpense> {
                 AddExpenseScreen(
                     onClose = {
+                        backstack.removeLastOrNull()
+                    }
+                )
+            }
+            entry<Destination.AddNewGroup>{
+                NewGroupAdditionScreen(
+                    onBack = {
                         backstack.removeLastOrNull()
                     }
                 )
