@@ -7,6 +7,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,6 +21,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
@@ -31,11 +34,18 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -43,9 +53,10 @@ import androidx.compose.ui.unit.dp
 import com.samkit.costcircle.ui.screens.newGroupAddition.components.GroupIconPreview
 import com.samkit.costcircle.ui.screens.newGroupAddition.viewModels.NewGroupViewModel
 import com.yourapp.costcircle.ui.theme.AccentTeal
+import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun NewGroupAdditionScreen(
     onBack: () -> Unit,
@@ -53,25 +64,43 @@ fun NewGroupAdditionScreen(
 ) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    // Local state for the text field input
+    var memberEmail by remember { mutableStateOf("") }
 
     LaunchedEffect(Unit) {
         viewModel.effect.collect { effect ->
             when (effect) {
-                NewGroupContract.Effect.NavigateBack,
-                NewGroupContract.Effect.GroupCreated -> {
-                    if (effect is NewGroupContract.Effect.GroupCreated) {
-                        Toast.makeText(context, "Group created successfully!", Toast.LENGTH_SHORT).show()
-                    }
+                is NewGroupContract.Effect.NavigateBack -> {
                     onBack()
                 }
+                is NewGroupContract.Effect.GroupCreated -> {
+                    scope.launch {
+                        snackbarHostState.showSnackbar(
+                            message = "Group created successfully!",
+                            duration = SnackbarDuration.Short
+                        )
+                        // Optional: small delay to let them see success before closing
+                        kotlinx.coroutines.delay(500)
+                        onBack()
+                    }
+                }
                 is NewGroupContract.Effect.ShowError -> {
-                    Toast.makeText(context, effect.message, Toast.LENGTH_LONG).show()
+                    scope.launch {
+                        snackbarHostState.showSnackbar(
+                            message = effect.message,
+                            duration = SnackbarDuration.Long,
+                            withDismissAction = true
+                        )
+                    }
                 }
             }
         }
     }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text("Create New Group", style = MaterialTheme.typography.titleMedium) },
@@ -89,9 +118,7 @@ fun NewGroupAdditionScreen(
                 exit = scaleOut() + fadeOut()
             ) {
                 ExtendedFloatingActionButton(
-                    // CRITICAL FIX: Only allow click if NOT loading AND button is enabled
                     onClick = {
-                        Log.d("GroupCreationFlow", "0. UI: FAB Clicked")
                         if (!state.isLoading && state.isCreateEnabled) {
                             viewModel.onEvent(NewGroupContract.Event.CreateClicked)
                         }
@@ -125,6 +152,7 @@ fun NewGroupAdditionScreen(
         ) {
             GroupIconPreview(state.groupName)
 
+            // --- SECTION 1: GROUP NAME ---
             Text(
                 text = "Group Name",
                 style = MaterialTheme.typography.labelLarge,
@@ -139,7 +167,6 @@ fun NewGroupAdditionScreen(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
                 singleLine = true,
-                // ADDITIONAL FIX: Disable input while loading
                 enabled = !state.isLoading,
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = AccentTeal,
@@ -147,7 +174,68 @@ fun NewGroupAdditionScreen(
                 )
             )
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(32.dp))
+
+            // --- SECTION 2: INVITE MEMBERS ---
+            Text(
+                text = "Invite Members",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+
+            OutlinedTextField(
+                value = memberEmail,
+                onValueChange = { memberEmail = it },
+                placeholder = { Text("Enter friend's email") },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                singleLine = true,
+                enabled = !state.isLoading,
+                trailingIcon = {
+                    IconButton(
+                        onClick = {
+                            if (memberEmail.isNotBlank()) {
+                                viewModel.onEvent(NewGroupContract.Event.MemberAdded(memberEmail))
+                                memberEmail = "" // Clear input
+                            }
+                        }
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = "Add Member", tint = AccentTeal)
+                    }
+                },
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = AccentTeal,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+                )
+            )
+
+            // --- SECTION 3: MEMBER CHIPS ---
+            // Displayed dynamically as users are added
+            androidx.compose.foundation.layout.FlowRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                state.members.forEach { email ->
+                    androidx.compose.material3.InputChip(
+                        selected = false,
+                        onClick = { viewModel.onEvent(NewGroupContract.Event.MemberRemoved(email)) },
+                        label = { Text(email, style = MaterialTheme.typography.bodySmall) },
+                        trailingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Remove",
+                                modifier = Modifier.size(16.dp)
+                            )
+                        },
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(100.dp)) // Extra space for FAB
         }
     }
 }

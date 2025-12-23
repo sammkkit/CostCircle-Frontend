@@ -1,9 +1,6 @@
 package com.samkit.costcircle.data.group.remote
 
-import com.samkit.costcircle.data.group.dto.CreateGroupRequest
-import com.samkit.costcircle.data.group.dto.CreateGroupResponse
-import com.samkit.costcircle.data.group.dto.GroupSummaryDto
-import com.samkit.costcircle.data.group.dto.GroupFinancialSummaryDto
+import com.samkit.costcircle.data.group.dto.*
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
@@ -24,4 +21,22 @@ interface GroupApiService {
         @Body request: CreateGroupRequest
     ): CreateGroupResponse
 
+    @POST("groups/{groupId}/expenses")
+    suspend fun addExpense(
+        @Path("groupId") groupId: Long,
+        @Body request: AddExpenseRequest
+    ): AddExpenseResponse
+
+    // --- NEW: Bulk Add Members ---
+    @POST("groups/{groupId}/members/bulk")
+    suspend fun addMembersBulk(
+        @Path("groupId") groupId: Long,
+        @Body request: BulkMemberRequest
+    ): BulkMemberResponse
+
+    // --- NEW: Get Expense History ---
+    @GET("groups/{groupId}/expenses")
+    suspend fun getGroupExpenses(
+        @Path("groupId") groupId: Long
+    ): List<TransactionDto>
 }

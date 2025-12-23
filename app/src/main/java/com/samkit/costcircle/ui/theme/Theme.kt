@@ -15,6 +15,7 @@ import com.yourapp.costcircle.ui.theme.AccentTeal
 import com.yourapp.costcircle.ui.theme.DarkBackground
 import com.yourapp.costcircle.ui.theme.DarkElevatedSurface
 import com.yourapp.costcircle.ui.theme.DarkSurface
+import com.yourapp.costcircle.ui.theme.DeepGrey
 import com.yourapp.costcircle.ui.theme.DividerDark
 import com.yourapp.costcircle.ui.theme.DividerLight
 import com.yourapp.costcircle.ui.theme.GreenOwed
@@ -30,7 +31,7 @@ private val DarkColorScheme = darkColorScheme(
     primary = AccentTeal,
     secondary = GreenOwed,      // Mapped for Owed status
     tertiary = OrangeOwe,       // Mapped for Owe status
-    background = DarkBackground,
+    background = DeepGrey,
     surface = DarkSurface,
     surfaceVariant = DarkElevatedSurface, // Used for elevated cards
 

@@ -1,16 +1,23 @@
 package com.samkit.costcircle.data.group.repository
 
 import android.util.Log
+import com.samkit.costcircle.data.auth.session.SessionManager
+import com.samkit.costcircle.data.group.dto.AddExpenseRequest
+import com.samkit.costcircle.data.group.dto.AddExpenseResponse
+import com.samkit.costcircle.data.group.dto.BulkMemberRequest
+import com.samkit.costcircle.data.group.dto.BulkMemberResponse
 import com.samkit.costcircle.data.group.dto.CreateGroupRequest
 import com.samkit.costcircle.data.group.dto.CreateGroupResponse
 import com.samkit.costcircle.data.group.dto.GroupFinancialSummaryDto
 import com.samkit.costcircle.data.group.dto.GroupSummaryDto
+import com.samkit.costcircle.data.group.dto.TransactionDto
 import com.samkit.costcircle.data.group.remote.GroupApiService
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 
 class GroupRepository(
-    private val api: GroupApiService
+    private val api: GroupApiService,
+    private val sessionManager: SessionManager
 ) {
 
     /**
@@ -42,6 +49,37 @@ class GroupRepository(
         val response = api.createGroup(CreateGroupRequest(name))
         // Signal that the list needs to be re-fetched
         _groupsRefreshTrigger.emit(Unit)
+        return response
+    }
+
+    /**
+     * Add expense to group
+     * Returns the response containing the new expenseId
+     */
+    suspend fun addExpense(groupId: Long, amount: Double, description: String): AddExpenseResponse {
+        val paidBy = sessionManager.getUserId()
+        val request = AddExpenseRequest(
+            amount = amount,
+            description = description.ifBlank { null },
+            paidBy = paidBy
+        )
+        val response = api.addExpense(groupId, request)
+
+        // Signal a refresh if you want the group list or details to update automatically
+        _groupsRefreshTrigger.emit(Unit)
+
+        return response
+    }
+
+    // 1. Fetch Expense History
+    suspend fun getGroupTransactions(groupId: Long): List<TransactionDto> {
+        return api.getGroupExpenses(groupId) // Matches your new Node.js route
+    }
+
+    // 2. Bulk Add Members
+    suspend fun addMembersBulk(groupId: Long, emails: List<String>): BulkMemberResponse {
+        val response = api.addMembersBulk(groupId, BulkMemberRequest(emails)) //
+        _groupsRefreshTrigger.emit(Unit) // Refresh UI after adding members
         return response
     }
 }

@@ -2,13 +2,19 @@ package com.samkit.costcircle.ui.screens.auth
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
@@ -17,11 +23,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.samkit.costcircle.ui.screens.auth.components.AuthHeader
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
@@ -33,136 +41,88 @@ fun LoginScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    val snackbarHostState = remember { SnackbarHostState() }
 
-    // Logic remains the same
-    LaunchedEffect(uiState.errorMessage) {
-        uiState.errorMessage?.let {
-            snackbarHostState.showSnackbar(it)
-            viewModel.resetState()
-        }
-    }
+    // Tactile Interaction State
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val buttonScale by animateFloatAsState(if (isPressed) 0.95f else 1f, label = "buttonScale")
+
     LaunchedEffect(uiState.isSuccess) {
         if (uiState.isSuccess) {
             onLoginSuccess()
             viewModel.resetState()
         }
     }
-
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { paddingValues ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
-                            MaterialTheme.colorScheme.surface
-                        )
-                    )
-                )
-                .padding(paddingValues)
-        ) {
+    Scaffold { padding ->
+        Box(modifier = Modifier.fillMaxSize().padding(padding)) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 32.dp)
-                    .navigationBarsPadding()
-                    .imePadding(), // Ensures keyboard doesn't hide the button
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .padding(horizontal = 24.dp)
+                    .verticalScroll(rememberScrollState())
+                    .imePadding(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
             ) {
-                // 1. Entrance Animation for Title
-                AnimatedVisibility(
-                    visible = true,
-                    enter = fadeIn(animationSpec = tween(1000)) + slideInVertically()
+                AuthHeader(
+                    title = "Welcome Back",
+                    subtitle = "Sign in to keep circles moving"
+                )
+
+                // Input Card
+                Surface(
+                    shape = RoundedCornerShape(24.dp),
+                    tonalElevation = 2.dp,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            text = "CostCircle",
-                            style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.primary
+                    Column(modifier = Modifier.padding(20.dp)) {
+                        OutlinedTextField(
+                            value = email,
+                            onValueChange = { email = it },
+                            label = { Text("Email") },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            leadingIcon = { Icon(Icons.Default.Email, null, modifier = Modifier.size(20.dp)) },
+                            colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = MaterialTheme.colorScheme.primary)
                         )
-                        Text(
-                            text = "Manage your expenses elegantly",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        OutlinedTextField(
+                            value = password,
+                            onValueChange = { password = it },
+                            label = { Text("Password") },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            visualTransformation = PasswordVisualTransformation(),
+                            leadingIcon = { Icon(Icons.Default.Lock, null, modifier = Modifier.size(20.dp)) }
                         )
                     }
                 }
-
-                Spacer(modifier = Modifier.height(48.dp))
-
-                // 2. Input Fields with rounded corners
-                OutlinedTextField(
-                    value = email,
-                    onValueChange = { email = it },
-                    label = { Text("Email Address") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                    singleLine = true,
-                    leadingIcon = {
-                        Icon(
-                            Icons.Default.Email,
-                            contentDescription = "Email Icon",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                OutlinedTextField(
-                    value = password,
-                    onValueChange = { password = it },
-                    label = { Text("Password") },
-                    visualTransformation = PasswordVisualTransformation(),
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    singleLine = true,
-                    leadingIcon = {
-                        Icon(
-                            Icons.Default.Lock,
-                            contentDescription = "Email Icon",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                )
 
                 Spacer(modifier = Modifier.height(32.dp))
 
-                // 3. Animated Button
+                // Premium Scalable Button
                 Button(
                     onClick = { viewModel.login(email, password) },
+                    interactionSource = interactionSource,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(56.dp)
-                        .animateContentSize(), // Smoothly expands/contracts
+                        .height(58.dp)
+                        .graphicsLayer(scaleX = buttonScale, scaleY = buttonScale),
                     shape = RoundedCornerShape(16.dp),
-                    enabled = !uiState.isLoading && email.isNotEmpty() && password.isNotEmpty()
+                    enabled = !uiState.isLoading && email.isNotBlank() && password.isNotBlank()
                 ) {
                     if (uiState.isLoading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp),
-                            strokeWidth = 3.dp,
-                            color = MaterialTheme.colorScheme.onPrimary
-                        )
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary)
                     } else {
-                        Text("Sign In", style = MaterialTheme.typography.titleMedium)
+                        Text("Sign In", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
-
-                TextButton(onClick = onRegisterClick) {
-                    Text(
-                        text = "Don't have an account? Sign Up",
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.SemiBold
-                    )
+                TextButton(onClick = onRegisterClick, modifier = Modifier.padding(top = 16.dp)) {
+                    Text("New to CostCircle? Create Account")
                 }
             }
         }

@@ -16,7 +16,7 @@ val AvatarPink = Color(0xFFF06292)
 val DarkBackground = Color(0xFF121212)
 val DarkSurface = Color(0xFF1E1E1E)
 val DarkElevatedSurface = Color(0xFF2C2C2E) // For cards in dark mode
-
+val DeepGrey = Color(0xFF1C1C1E)
 val LightBackground = Color(0xFFF8F9FB)
 val LightSurface = Color(0xFFFFFFFF)
 

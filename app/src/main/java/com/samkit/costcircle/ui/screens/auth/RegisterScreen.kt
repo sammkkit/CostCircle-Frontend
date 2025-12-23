@@ -10,10 +10,14 @@ import androidx.compose.ui.unit.dp
 import org.koin.androidx.compose.koinViewModel
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -27,10 +31,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.samkit.costcircle.ui.screens.auth.components.AuthHeader
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
@@ -40,13 +48,21 @@ fun RegisterScreen(
     onBackToLogin: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
     val snackbarHostState = remember { SnackbarHostState() }
 
+    // Tactile feedback state for the button
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val buttonScale by animateFloatAsState(
+        targetValue = if (isPressed) 0.96f else 1f,
+        label = "buttonScale"
+    )
+
+    // Logic remains untouched
     LaunchedEffect(uiState.isSuccess) {
         if (uiState.isSuccess) {
             onRegisterSuccess()
@@ -62,100 +78,90 @@ fun RegisterScreen(
     }
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) }
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        containerColor = MaterialTheme.colorScheme.surface
     ) { paddingValues ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.2f),
-                            MaterialTheme.colorScheme.surface
-                        )
-                    )
-                )
                 .padding(paddingValues)
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 32.dp)
-                    .verticalScroll(rememberScrollState()) // Good for registration forms
+                    .padding(horizontal = 24.dp)
+                    .verticalScroll(rememberScrollState())
                     .navigationBarsPadding()
                     .imePadding(),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
             ) {
-                // Header Animation
-                AnimatedVisibility(
-                    visible = true,
-                    enter = fadeIn(tween(800)) + slideInVertically()
+                // 1. Branded Header (Matches Group Empty States)
+                AuthHeader(
+                    title = "Join the Circle",
+                    subtitle = "Start your journey to financial clarity"
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // 2. Input Section - Grouped in a Tonal Surface (Matches SettlementItem)
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(28.dp),
+                    tonalElevation = 2.dp,
+                    border = BorderStroke(
+                        width = 1.dp,
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+                    )
                 ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            text = "Join CostCircle",
-                            style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.primary
+                    Column(
+                        modifier = Modifier.padding(20.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        AuthTextField(
+                            value = name,
+                            onValueChange = { name = it },
+                            label = "Full Name",
+                            icon = Icons.Default.Person,
+                            enabled = !uiState.isLoading
                         )
-                        Text(
-                            text = "Start your journey to financial clarity",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+
+                        AuthTextField(
+                            value = email,
+                            onValueChange = { email = it },
+                            label = "Email Address",
+                            icon = Icons.Default.Email,
+                            keyboardType = KeyboardType.Email,
+                            enabled = !uiState.isLoading
+                        )
+
+                        AuthTextField(
+                            value = password,
+                            onValueChange = { password = it },
+                            label = "Create Password",
+                            icon = Icons.Default.Lock,
+                            isPassword = true,
+                            enabled = !uiState.isLoading
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(40.dp))
-
-                // Input Section
-                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    OutlinedTextField(
-                        value = name,
-                        onValueChange = { name = it },
-                        label = { Text("Full Name") },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp),
-                        leadingIcon = { Icon(Icons.Default.Person, contentDescription = null, modifier = Modifier.size(20.dp)) },
-                        singleLine = true,
-                        enabled = !uiState.isLoading
-                    )
-
-                    OutlinedTextField(
-                        value = email,
-                        onValueChange = { email = it },
-                        label = { Text("Email Address") },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp),
-                        leadingIcon = { Icon(Icons.Default.Email, contentDescription = null, modifier = Modifier.size(20.dp)) },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                        singleLine = true,
-                        enabled = !uiState.isLoading
-                    )
-
-                    OutlinedTextField(
-                        value = password,
-                        onValueChange = { password = it },
-                        label = { Text("Create Password") },
-                        visualTransformation = PasswordVisualTransformation(),
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp),
-                        leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null, modifier = Modifier.size(20.dp)) },
-                        singleLine = true,
-                        enabled = !uiState.isLoading
-                    )
-                }
-
                 Spacer(modifier = Modifier.height(32.dp))
 
-                // Action Button
+                // 3. Tactile Action Button
                 Button(
                     onClick = { viewModel.register(name, email, password) },
+                    interactionSource = interactionSource,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(56.dp)
+                        .height(60.dp)
+                        .graphicsLayer(scaleX = buttonScale, scaleY = buttonScale)
                         .animateContentSize(),
-                    shape = RoundedCornerShape(16.dp),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    ),
                     enabled = !uiState.isLoading && name.isNotBlank() && email.isNotBlank() && password.length >= 6
                 ) {
                     if (uiState.isLoading) {
@@ -165,7 +171,10 @@ fun RegisterScreen(
                             color = MaterialTheme.colorScheme.onPrimary
                         )
                     } else {
-                        Text("Create Account", style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            text = "Create Account",
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                        )
                     }
                 }
 
@@ -175,10 +184,47 @@ fun RegisterScreen(
                     Text(
                         text = "Already have an account? Log In",
                         color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.SemiBold
+                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold)
                     )
                 }
             }
         }
     }
+}
+
+@Composable
+fun AuthTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    icon: ImageVector,
+    enabled: Boolean,
+    keyboardType: KeyboardType = KeyboardType.Text,
+    isPassword: Boolean = false
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = { Text(label) },
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        leadingIcon = {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier.size(22.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
+        },
+        visualTransformation = if (isPassword) PasswordVisualTransformation() else VisualTransformation.None,
+        keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+        singleLine = true,
+        enabled = enabled,
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = MaterialTheme.colorScheme.primary,
+            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+            focusedContainerColor = MaterialTheme.colorScheme.surface,
+            unfocusedContainerColor = MaterialTheme.colorScheme.surface
+        )
+    )
 }

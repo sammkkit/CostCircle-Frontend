@@ -19,7 +19,7 @@ import com.yourapp.costcircle.ui.theme.OrangeOwe
 fun GroupHeaderCard(
     groupName: String,
     settlements: List<SettlementEntryDto>,
-    currentUserId: Long
+    currentUserId: Long?
 ) {
     // 1. Calculate user's net position in this specific group
     val userNetPosition = remember(settlements, currentUserId) {

@@ -38,7 +38,18 @@ class NewGroupViewModel(
                     error = null
                 )
             }
-
+            is NewGroupContract.Event.MemberAdded -> {
+                // Logic to add a unique, valid email to the list
+                val currentMembers = _state.value.members.toMutableList()
+                if (event.email.isNotBlank() && !currentMembers.contains(event.email)) {
+                    currentMembers.add(event.email.trim())
+                    _state.value = _state.value.copy(members = currentMembers)
+                }
+            }
+            is NewGroupContract.Event.MemberRemoved -> {
+                val currentMembers = _state.value.members.filter { it != event.email }
+                _state.value = _state.value.copy(members = currentMembers)
+            }
             NewGroupContract.Event.CreateClicked -> {
                 Log.d(TAG, "0. Event: CreateClicked received")
 
@@ -63,7 +74,7 @@ class NewGroupViewModel(
                     return
                 }
 
-                createGroup()
+                createGroupWithMembers()
             }
 
             NewGroupContract.Event.BackClicked -> {
@@ -73,41 +84,69 @@ class NewGroupViewModel(
         }
     }
 
-    private fun createGroup() {
-        val name = _state.value.groupName.trim()
-        Log.d(TAG, "1. ViewModel: createGroup() called for name: $name")
+//    private fun createGroup() {
+//        val name = _state.value.groupName.trim()
+//        Log.d(TAG, "1. ViewModel: createGroup() called for name: $name")
+//
+//        viewModelScope.launch {
+//            try {
+//                Log.d(TAG, "2. ViewModel: Setting isLoading = true")
+//                _state.value = _state.value.copy(
+//                    isLoading = true,
+//                    isCreateEnabled = false // Disable button
+//                )
+//
+//                Log.d(TAG, "3. ViewModel: Calling repository.createGroup($name)")
+//                val response = repository.createGroup(name)
+//
+//                Log.d(TAG, "6. ViewModel: SUCCESS! Received groupId: ${response.groupId}")
+//                _state.value = _state.value.copy(isLoading = false)
+//                sendEffect(NewGroupContract.Effect.GroupCreated(groupId = ))
+//
+//            } catch (e: Exception) {
+//                Log.d(TAG, "6. ViewModel: FAILURE! Error: ${e.localizedMessage}")
+//                _state.value = _state.value.copy(
+//                    isLoading = false,
+//                    isCreateEnabled = name.isNotEmpty() // Re-enable if name is valid
+//                )
+//                sendEffect(NewGroupContract.Effect.ShowError(e.message ?: "Error creating group"))
+//
+//            } finally {
+//                // CRITICAL: Always reset the atomic flag
+//                isCreating.set(false)
+//                Log.d(TAG, "7. ViewModel: Reset isCreating flag")
+//            }
+//        }
+//    }
+private fun createGroupWithMembers() {
+    val currentState = _state.value
+    viewModelScope.launch {
+        try {
+            _state.value = currentState.copy(isLoading = true)
 
-        viewModelScope.launch {
-            try {
-                Log.d(TAG, "2. ViewModel: Setting isLoading = true")
-                _state.value = _state.value.copy(
-                    isLoading = true,
-                    isCreateEnabled = false // Disable button
-                )
+            // 1. Create Group
+            val response = repository.createGroup(currentState.groupName.trim())
 
-                Log.d(TAG, "3. ViewModel: Calling repository.createGroup($name)")
-                val response = repository.createGroup(name)
+            // 2. Add Members
+            if (currentState.members.isNotEmpty()) {
+                val memberResponse = repository.addMembersBulk(response.groupId, currentState.members)
 
-                Log.d(TAG, "6. ViewModel: SUCCESS! Received groupId: ${response.groupId}")
-                _state.value = _state.value.copy(isLoading = false)
-                sendEffect(NewGroupContract.Effect.GroupCreated)
-
-            } catch (e: Exception) {
-                Log.d(TAG, "6. ViewModel: FAILURE! Error: ${e.localizedMessage}")
-                _state.value = _state.value.copy(
-                    isLoading = false,
-                    isCreateEnabled = name.isNotEmpty() // Re-enable if name is valid
-                )
-                sendEffect(NewGroupContract.Effect.ShowError(e.message ?: "Error creating group"))
-
-            } finally {
-                // CRITICAL: Always reset the atomic flag
-                isCreating.set(false)
-                Log.d(TAG, "7. ViewModel: Reset isCreating flag")
+                // If some emails were missing, we can pass that info to the UI
+                if (memberResponse.missingEmails.isNotEmpty()) {
+                    val missing = memberResponse.missingEmails.joinToString(", ")
+                    sendEffect(NewGroupContract.Effect.ShowError("Group created, but $missing not found."))
+                }
             }
+
+            sendEffect(NewGroupContract.Effect.GroupCreated(response.groupId))
+        } catch (e: Exception) {
+            _state.value = _state.value.copy(isLoading = false)
+            sendEffect(NewGroupContract.Effect.ShowError(e.message ?: "Failed to create group"))
+        } finally {
+            isCreating.set(false)
         }
     }
-
+}
     private fun sendEffect(effect: NewGroupContract.Effect) {
         viewModelScope.launch { _effect.send(effect) }
     }
