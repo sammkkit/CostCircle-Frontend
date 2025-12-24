@@ -1,6 +1,7 @@
 package com.samkit.costcircle.data.group.repository
 
 import android.util.Log
+import com.samkit.costcircle.data.auth.dto.UserDto
 import com.samkit.costcircle.data.auth.session.SessionManager
 import com.samkit.costcircle.data.group.dto.AddExpenseRequest
 import com.samkit.costcircle.data.group.dto.AddExpenseResponse
@@ -10,6 +11,8 @@ import com.samkit.costcircle.data.group.dto.CreateGroupRequest
 import com.samkit.costcircle.data.group.dto.CreateGroupResponse
 import com.samkit.costcircle.data.group.dto.GroupFinancialSummaryDto
 import com.samkit.costcircle.data.group.dto.GroupSummaryDto
+import com.samkit.costcircle.data.group.dto.SettleUpRequest
+import com.samkit.costcircle.data.group.dto.SettleUpResponse
 import com.samkit.costcircle.data.group.dto.TransactionDto
 import com.samkit.costcircle.data.group.remote.GroupApiService
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -80,6 +83,19 @@ class GroupRepository(
     suspend fun addMembersBulk(groupId: Long, emails: List<String>): BulkMemberResponse {
         val response = api.addMembersBulk(groupId, BulkMemberRequest(emails)) //
         _groupsRefreshTrigger.emit(Unit) // Refresh UI after adding members
+        return response
+    }
+
+    suspend fun getGroupMembers(groupId: Long): List<UserDto> {
+        return api.getGroupMembers(groupId)
+    }
+
+    suspend fun settleUp(groupId: Long, request: SettleUpRequest): SettleUpResponse {
+        val response = api.settleUp(groupId, request)
+
+        // Signal refresh so Balances and Transactions update across the app
+        _groupsRefreshTrigger.emit(Unit)
+
         return response
     }
 }

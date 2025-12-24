@@ -1,5 +1,6 @@
 package com.samkit.costcircle.data.group.remote
 
+import com.samkit.costcircle.data.auth.dto.UserDto
 import com.samkit.costcircle.data.group.dto.*
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -39,4 +40,16 @@ interface GroupApiService {
     suspend fun getGroupExpenses(
         @Path("groupId") groupId: Long
     ): List<TransactionDto>
+
+    // Add this to your existing interface
+    @GET("groups/{groupId}/members")
+    suspend fun getGroupMembers(
+        @Path("groupId") groupId: Long
+    ): List<UserDto>
+
+    @POST("groups/{groupId}/settle")
+    suspend fun settleUp(
+        @Path("groupId") groupId: Long,
+        @Body request: SettleUpRequest
+    ): SettleUpResponse
 }

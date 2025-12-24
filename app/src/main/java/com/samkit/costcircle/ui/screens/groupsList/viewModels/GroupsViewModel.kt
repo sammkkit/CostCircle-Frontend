@@ -51,27 +51,39 @@ class GroupsViewModel(
         }
     }
 
+    // GroupsViewModel.kt
+
     private fun loadGroups() {
         viewModelScope.launch {
             if (_state.value is GroupsContract.State.Loading) return@launch
             _state.value = GroupsContract.State.Loading
 
             runCatching {
-                repository.getGroupsSummary() // Assuming this is a suspend function
+                repository.getGroupsSummary()
             }.onSuccess { groups ->
                 if (groups.isEmpty()) {
                     allGroups = emptyList()
                     _state.value = GroupsContract.State.Empty
                 } else {
                     allGroups = groups
-                    val owed = groups.filter { it.netAmount > 0 }.sumOf { it.netAmount }
-                    val owe = groups.filter { it.netAmount < 0 }.sumOf { it.netAmount }.absoluteValue
+
+                    // Calculate Totals for the Header Card
+                    // The backend sends positive absolute numbers in netAmount.
+                    // We sum them based on the 'direction' flag.
+
+                    val totalOwedToMe = groups
+                        .filter { it.direction == "YOU_ARE_OWED" }
+                        .sumOf { it.netAmount }
+
+                    val totalIOwe = groups
+                        .filter { it.direction == "YOU_OWE" }
+                        .sumOf { it.netAmount }
 
                     _state.value = GroupsContract.State.Success(
                         groups = groups,
-                        filteredGroups = groups, // Initially, filtered is same as original
-                        totalOwedToYou = owed,
-                        totalYouOwe = owe
+                        filteredGroups = groups,
+                        totalOwedToYou = totalOwedToMe,
+                        totalYouOwe = totalIOwe
                     )
                 }
             }.onFailure {

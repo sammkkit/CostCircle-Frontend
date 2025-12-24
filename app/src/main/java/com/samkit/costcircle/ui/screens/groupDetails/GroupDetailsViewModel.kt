@@ -4,6 +4,8 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.samkit.costcircle.data.auth.session.SessionManager
+import com.samkit.costcircle.data.group.dto.SettleUpRequest
+import com.samkit.costcircle.data.group.dto.SettlementEntryDto
 import com.samkit.costcircle.data.group.repository.GroupRepository
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
@@ -49,9 +51,32 @@ class GroupDetailsViewModel(
             is GroupDetailsContract.Event.AddMembers -> addMembersBulk(event.emails)
 
             GroupDetailsContract.Event.BackClicked -> sendEffect(GroupDetailsContract.Effect.NavigateBack)
+            GroupDetailsContract.Event.MemberListClicked -> {
+                sendEffect(GroupDetailsContract.Effect.OpenMembersSheet)
+            }
+            is GroupDetailsContract.Event.SettleUpClicked -> performSettleUp(event.settlement)
         }
     }
-
+    private fun performSettleUp(settlement: SettlementEntryDto) {
+        viewModelScope.launch {
+            runCatching {
+                // 1. Record the payment in the new table
+                repository.settleUp(
+                    groupId = groupId,
+                    request = SettleUpRequest(
+                        receiverId = settlement.receiverUserId,
+                        amount = settlement.amount
+                    )
+                )
+            }.onSuccess {
+                sendEffect(GroupDetailsContract.Effect.ShowToast("Payment recorded! Balance updated."))
+                // 2. Trigger a data refresh
+                loadDetails(showLoading = false)
+            }.onFailure { e ->
+                sendEffect(GroupDetailsContract.Effect.ShowToast("Failed to settle: ${e.message}"))
+            }
+        }
+    }
     private fun loadDetails(showLoading: Boolean = true) {
         viewModelScope.launch {
             if (showLoading) _state.value = GroupDetailsContract.State.Loading
@@ -60,9 +85,11 @@ class GroupDetailsViewModel(
                 // Parallel fetching to optimize performance
                 val settlementsDeferred = async { repository.getGroupFinancialSummary(groupId) }
                 val transactionsDeferred = async { repository.getGroupTransactions(groupId) }
+                val membersDef = async { repository.getGroupMembers(groupId) }
 
                 val settlementsResponse = settlementsDeferred.await()
                 val transactionsList = transactionsDeferred.await()
+                val members = membersDef.await()
                 Log.d("GroupRepository", "Fetching group transactions for groupId: $transactionsList")
 
                 // If both are empty, show Empty state; otherwise Success
@@ -72,6 +99,7 @@ class GroupDetailsViewModel(
                     GroupDetailsContract.State.Success(
                         settlements = settlementsResponse.settlements,
                         transactions = transactionsList,
+                        members = members,
                         // Retain current tab if we are just refreshing
                         selectedTab = (_state.value as? GroupDetailsContract.State.Success)?.selectedTab ?: 0
                     )

@@ -29,20 +29,19 @@ import com.yourapp.costcircle.ui.theme.GreenOwed
 import com.yourapp.costcircle.ui.theme.OrangeOwe
 
 @Composable
-fun SettlementItem(entry: SettlementEntryDto) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val isPressed by interactionSource.collectIsPressedAsState()
-    val scale by animateFloatAsState(if (isPressed) 0.96f else 1f, label = "scale")
+fun SettlementItem(
+    entry: SettlementEntryDto,
+    currentUserId: Long?,
+    onSettleUp: (SettlementEntryDto) -> Unit
+) {
+    val isMePaying = entry.payerUserId == currentUserId
 
     Surface(
         shape = MaterialTheme.shapes.large,
         color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 4.dp,
+        tonalElevation = 2.dp,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
-        modifier = Modifier
-            .fillMaxWidth()
-            .graphicsLayer(scaleX = scale, scaleY = scale)
-            .clickable(interactionSource = interactionSource, indication = null) { /* Future action */ }
+        modifier = Modifier.fillMaxWidth()
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
@@ -52,18 +51,15 @@ fun SettlementItem(entry: SettlementEntryDto) {
             UserSmallAvatar(name = entry.payerName, color = OrangeOwe)
 
             Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(horizontal = 12.dp),
+                modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
                     text = "₹${String.format("%.2f", entry.amount)}",
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black),
-                    color = MaterialTheme.colorScheme.onSurface
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black)
                 )
                 Icon(
-                    imageVector = Icons.Default.ArrowForward,
+                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                     contentDescription = null,
                     modifier = Modifier.size(16.dp),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
@@ -72,6 +68,23 @@ fun SettlementItem(entry: SettlementEntryDto) {
 
             // Receiver Avatar
             UserSmallAvatar(name = entry.receiverName, color = GreenOwed)
+
+            // --- THE ACTION BUTTON ---
+            if (isMePaying) {
+                Spacer(Modifier.width(12.dp))
+                Button(
+                    onClick = { onSettleUp(entry) },
+                    shape = RoundedCornerShape(12.dp),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
+                    modifier = Modifier.height(36.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.primary
+                    )
+                ) {
+                    Text("Settle", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold))
+                }
+            }
         }
     }
 }
