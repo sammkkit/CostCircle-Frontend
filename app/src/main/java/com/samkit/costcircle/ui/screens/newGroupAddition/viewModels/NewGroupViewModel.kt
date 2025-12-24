@@ -8,6 +8,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -80,6 +81,9 @@ class NewGroupViewModel(
             NewGroupContract.Event.BackClicked -> {
                 // Allow back navigation even while creating (user choice)
                 sendEffect(NewGroupContract.Effect.NavigateBack)
+            }
+            is NewGroupContract.Event.Reset -> {
+                _state.update { NewGroupContract.State() } // Reset to initial defaults
             }
         }
     }

@@ -68,7 +68,9 @@ fun NewGroupAdditionScreen(
     val scope = rememberCoroutineScope()
     // Local state for the text field input
     var memberEmail by remember { mutableStateOf("") }
-
+    LaunchedEffect(Unit) {
+        viewModel.onEvent(NewGroupContract.Event.Reset)
+    }
     LaunchedEffect(Unit) {
         viewModel.effect.collect { effect ->
             when (effect) {
@@ -141,7 +143,8 @@ fun NewGroupAdditionScreen(
                     }
                 }
             }
-        }
+        },
+        containerColor = if (state.isLoading) AccentTeal.copy(alpha = 0.5f) else AccentTeal,
     ) { padding ->
         Column(
             modifier = Modifier

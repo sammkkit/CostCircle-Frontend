@@ -14,8 +14,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.samkit.costcircle.ui.screens.groupsList.states.GroupsContract
 import com.yourapp.costcircle.ui.theme.GreenOwed
 import com.yourapp.costcircle.ui.theme.OrangeOwe
@@ -174,10 +178,22 @@ fun GroupsTopBar(
                             textStyle = MaterialTheme.typography.bodyLarge
                         )
                     } else {
+                        // Define your brand colors (matches the logo image)
+                        val brandBlue = Color(0xFF4A7D9C)
+                        val brandTeal = Color(0xFF50C895)
+
                         Text(
-                            text = "CostCircle",
+                            text = buildAnnotatedString {
+                                withStyle(SpanStyle(color = brandBlue)) {
+                                    append("Cost")
+                                }
+                                withStyle(SpanStyle(color = brandTeal)) {
+                                    append("Circle")
+                                }
+                            },
                             style = MaterialTheme.typography.headlineSmall.copy(
-                                fontWeight = FontWeight.Black
+                                fontWeight = FontWeight.Black,
+                                letterSpacing = (-0.5).sp // Tighten it up slightly for a logo feel
                             ),
                             modifier = Modifier.graphicsLayer {
                                 scaleX = titleScale

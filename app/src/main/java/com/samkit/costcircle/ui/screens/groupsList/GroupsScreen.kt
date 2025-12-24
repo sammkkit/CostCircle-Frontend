@@ -18,10 +18,16 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.samkit.costcircle.ui.screens.groupsList.components.*
 import com.samkit.costcircle.ui.screens.groupsList.states.GroupsContract
 import org.koin.androidx.compose.koinViewModel
@@ -45,8 +51,7 @@ fun GroupsScreen(
     val pullRefreshState = rememberPullToRefreshState()
     // We consider it "refreshing" if the state is currently Loading.
     // This connects the UI spinner directly to your ViewModel's status.
-    val isRefreshing = state is GroupsContract.State.Loading
-
+    val isRefreshing = false
     // Logic to ensure vibration only triggers once per crossing
     var hasVibrated by remember { mutableStateOf(false) }
 
@@ -91,11 +96,7 @@ fun GroupsScreen(
         }
     }
 
-    SideEffect {
-        if (state is GroupsContract.State.Empty) {
-            viewModel.onEvent(GroupsContract.Event.Load)
-        }
-    }
+
 
     Scaffold(
         topBar = {
@@ -115,7 +116,7 @@ fun GroupsScreen(
             state = pullRefreshState,
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding), // Respect Scaffold padding
+                .padding(padding),
             indicator = {
                 PullToRefreshDefaults.Indicator(
                     state = pullRefreshState,
@@ -200,7 +201,6 @@ fun GroupsScreen(
                                     }
                                 }
                             }
-
                             // 2. GROUPS HEADER
                             item {
                                 var visible by remember { mutableStateOf(false) }

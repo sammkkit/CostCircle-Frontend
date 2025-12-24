@@ -14,6 +14,7 @@ object NewGroupContract {
         data class MemberRemoved(val email: String) : Event // NEW: Remove from list
         object CreateClicked : Event
         object BackClicked : Event
+        data object Reset : Event
     }
 
     sealed interface Effect {
