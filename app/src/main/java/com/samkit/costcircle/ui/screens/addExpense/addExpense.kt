@@ -53,6 +53,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.samkit.costcircle.data.group.dto.GroupSummaryDto
+import com.samkit.costcircle.ui.screens.addExpense.components.ExpenseSplitSheet
 import com.samkit.costcircle.ui.screens.addExpense.components.GroupSelectionSheet
 import com.samkit.costcircle.ui.screens.addExpense.components.SimplifiedGroupBottomBar
 import com.samkit.costcircle.ui.screens.addExpense.states.AddExpenseContract
@@ -64,24 +65,30 @@ fun AddExpenseScreen(
     onClose: () -> Unit,
     viewModel: AddExpenseViewModel = koinViewModel()
 ) {
-    // 1. Collect state from ViewModel
     val state by viewModel.state.collectAsState()
     val haptic = LocalHapticFeedback.current
-    var showGroupSheet by remember { mutableStateOf(false) }
     val context = LocalContext.current
-    // THE FIX: Collect one-time effects (Navigation)
+
+    // Sheet States
+    var showGroupSheet by remember { mutableStateOf(false) }
+    var showSplitSheet by remember { mutableStateOf(false) } // <--- NEW
+
     LaunchedEffect(Unit) {
         viewModel.effect.collect { effect ->
             when (effect) {
                 AddExpenseContract.Effect.ExpenseSaved -> {
                     Toast.makeText(context, "Expense saved!", Toast.LENGTH_SHORT).show()
-                    viewModel.onEvent(AddExpenseContract.Event.Reset) // ✅ reset
+                    viewModel.onEvent(AddExpenseContract.Event.Reset)
                     onClose()
+                }
+                is AddExpenseContract.Effect.ShowToast -> {
+                    Toast.makeText(context, effect.message, Toast.LENGTH_SHORT).show()
                 }
             }
         }
     }
 
+    // --- SHEETS ---
     if (showGroupSheet) {
         GroupSelectionSheet(
             groups = state.groups,
@@ -94,13 +101,21 @@ fun AddExpenseScreen(
         )
     }
 
+    // <--- NEW SHEET ---
+    if (showSplitSheet) {
+        ExpenseSplitSheet(
+            state = state,
+            onEvent = viewModel::onEvent,
+            onDismiss = { showSplitSheet = false }
+        )
+    }
+
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             CenterAlignedTopAppBar(
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface
+                    containerColor = MaterialTheme.colorScheme.background
                 ),
                 title = { Text("Add expense", style = MaterialTheme.typography.titleMedium) },
                 navigationIcon = {
@@ -123,7 +138,6 @@ fun AddExpenseScreen(
             )
         },
         bottomBar = {
-            // 2. Pass dynamic label and click handler to BottomBar
             SimplifiedGroupBottomBar(
                 selectedGroupName = state.selectedGroup?.groupName ?: "Choose group",
                 onClick = { showGroupSheet = true }
@@ -140,41 +154,22 @@ fun AddExpenseScreen(
         ) {
             Spacer(modifier = Modifier.height(16.dp))
 
-            // --- "With You" Section ---
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "With you and:",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
+            // Group Selection Row (Kept same)
+            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text("With you and:", style = MaterialTheme.typography.bodyLarge)
                 Spacer(modifier = Modifier.width(12.dp))
-
                 Surface(
                     onClick = { showGroupSheet = true },
                     shape = RoundedCornerShape(12.dp),
                     color = MaterialTheme.colorScheme.surfaceVariant,
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
                 ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Groups,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(18.dp)
-                        )
+                    Row(modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Groups, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            // 3. Dynamic label based on selection
                             text = state.selectedGroup?.groupName ?: "Choose group",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = if (state.selectedGroup != null) MaterialTheme.colorScheme.onSurface
-                            else MaterialTheme.colorScheme.onSurfaceVariant
+                            style = MaterialTheme.typography.bodyMedium
                         )
                     }
                 }
@@ -182,15 +177,12 @@ fun AddExpenseScreen(
 
             Spacer(modifier = Modifier.height(40.dp))
 
-            // --- Description Input ---
+            // Description Input (Kept same)
             Row(verticalAlignment = Alignment.CenterVertically) {
-                IconContainer {
-                    Icon(Icons.Outlined.Notes, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
+                IconContainer { Icon(Icons.Outlined.Notes, null, tint = MaterialTheme.colorScheme.onSurfaceVariant) }
                 Spacer(modifier = Modifier.width(16.dp))
                 UnderlinedInput(
                     value = state.description,
-                    // 4. Send event to ViewModel instead of local mutation
                     onValueChange = { viewModel.onEvent(AddExpenseContract.Event.DescriptionChanged(it)) },
                     placeholder = "Enter a description",
                     modifier = Modifier.weight(1f)
@@ -199,19 +191,12 @@ fun AddExpenseScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // --- Amount Input ---
+            // Amount Input (Kept same)
             Row(verticalAlignment = Alignment.CenterVertically) {
-                IconContainer {
-                    Text(
-                        text = "₹",
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+                IconContainer { Text("₹", style = MaterialTheme.typography.titleLarge) }
                 Spacer(modifier = Modifier.width(16.dp))
                 UnderlinedInput(
                     value = state.amount,
-                    // 5. Removed uiState, using state.amount and Event call
                     onValueChange = { viewModel.onEvent(AddExpenseContract.Event.AmountChanged(it)) },
                     placeholder = "0.00",
                     modifier = Modifier.weight(1f),
@@ -221,7 +206,7 @@ fun AddExpenseScreen(
 
             Spacer(modifier = Modifier.height(48.dp))
 
-            // --- Enhanced "Paid by" Sentence ---
+            // --- UPDATED SPLIT SUMMARY ROW ---
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center,
@@ -230,16 +215,32 @@ fun AddExpenseScreen(
                 Text("Paid by ", color = MaterialTheme.colorScheme.onSurface)
                 BetterActionChip(label = "you") { haptic.performHapticFeedback(HapticFeedbackType.LongPress) }
                 Text(" and split ", color = MaterialTheme.colorScheme.onSurface)
-                BetterActionChip(label = "equally") { haptic.performHapticFeedback(HapticFeedbackType.LongPress) }
 
-                if (state.errorMessage != null) {
-                    Text(
-                        text = state.errorMessage!!,
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.padding(top = 16.dp)
-                    )
+                // DYNAMIC LABEL based on Split Type
+                val splitLabel = when(state.splitType) {
+                    com.samkit.costcircle.data.group.dto.SplitType.EQUAL -> "equally"
+                    com.samkit.costcircle.data.group.dto.SplitType.PERCENTAGE -> "by %"
+                    com.samkit.costcircle.data.group.dto.SplitType.EXACT -> "unequally"
                 }
+
+                BetterActionChip(label = splitLabel) {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    // OPEN THE SPLIT SHEET
+                    if (state.selectedGroup != null) {
+                        showSplitSheet = true
+                    } else {
+                        Toast.makeText(context, "Select a group first", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+
+            if (state.errorMessage != null) {
+                Text(
+                    text = state.errorMessage!!,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(top = 16.dp)
+                )
             }
         }
     }

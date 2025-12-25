@@ -33,6 +33,7 @@ object GroupDetailsContract {
         // NEW: Handle adding members from the details screen
         data class AddMembers(val emails: List<String>) : Event
         data class SettleUpClicked(val settlement: SettlementEntryDto) : Event
+        data object OnResume : Event
     }
 
     sealed interface Effect {

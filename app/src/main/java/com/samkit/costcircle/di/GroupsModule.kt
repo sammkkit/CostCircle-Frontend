@@ -46,7 +46,7 @@ val groupsModule = module {
     }
     viewModel {
         AddExpenseViewModel(
-            get()
+            get(),get()
         )
     }
 

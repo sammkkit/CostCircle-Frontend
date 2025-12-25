@@ -59,19 +59,8 @@ class GroupRepository(
      * Add expense to group
      * Returns the response containing the new expenseId
      */
-    suspend fun addExpense(groupId: Long, amount: Double, description: String): AddExpenseResponse {
-        val paidBy = sessionManager.getUserId()
-        val request = AddExpenseRequest(
-            amount = amount,
-            description = description.ifBlank { null },
-            paidBy = paidBy
-        )
-        val response = api.addExpense(groupId, request)
-
-        // Signal a refresh if you want the group list or details to update automatically
-        _groupsRefreshTrigger.emit(Unit)
-
-        return response
+    suspend fun addExpense(groupId: Long, request: AddExpenseRequest): AddExpenseResponse {
+        return api.addExpense(groupId, request)
     }
 
     // 1. Fetch Expense History

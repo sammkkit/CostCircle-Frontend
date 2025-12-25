@@ -37,6 +37,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.samkit.costcircle.data.auth.session.SessionManager
 import com.samkit.costcircle.data.group.dto.SettlementEntryDto
 import com.samkit.costcircle.ui.screens.groupDetails.components.GroupMembersSheet
@@ -69,7 +72,18 @@ fun GroupDetailsScreen(
     val context = LocalContext.current
     var showAddMemberDialog by remember { mutableStateOf(false) }
     var showMembersSheet by remember { mutableStateOf(false) }
-
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.onEvent(GroupDetailsContract.Event.OnResume)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
     LaunchedEffect(Unit) {
         viewModel.effect.collect { effect ->
             when (effect) {

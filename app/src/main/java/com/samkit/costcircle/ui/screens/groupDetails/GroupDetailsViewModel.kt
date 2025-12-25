@@ -47,7 +47,13 @@ class GroupDetailsViewModel(
                     _state.value = currentState.copy(selectedTab = event.index)
                 }
             }
-
+            GroupDetailsContract.Event.OnResume -> {
+                // Only refresh if we already have data (Success state)
+                // If we are currently Error/Loading/Empty, a full load is fine/handled elsewhere
+                if (_state.value is GroupDetailsContract.State.Success) {
+                    loadDetails(showLoading = false)
+                }
+            }
             is GroupDetailsContract.Event.AddMembers -> addMembersBulk(event.emails)
 
             GroupDetailsContract.Event.BackClicked -> sendEffect(GroupDetailsContract.Effect.NavigateBack)
