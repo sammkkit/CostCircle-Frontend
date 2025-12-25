@@ -18,9 +18,8 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import com.samkit.costcircle.data.auth.session.SessionManager
 import com.samkit.costcircle.ui.screens.addExpense.AddExpenseScreen
-import com.samkit.costcircle.ui.screens.auth.AuthViewModel
 import com.samkit.costcircle.ui.screens.auth.LoginScreen
-import com.samkit.costcircle.ui.screens.auth.RegisterScreen
+import com.samkit.costcircle.ui.screens.auth.LoginViewModel
 import com.samkit.costcircle.ui.screens.groupdetails.GroupDetailsScreen
 import com.samkit.costcircle.ui.screens.main.MainScaffold
 import com.samkit.costcircle.ui.screens.newGroupAddition.NewGroupAdditionScreen
@@ -42,7 +41,7 @@ fun AppNavHost(
 
     val backstack = rememberNavBackStack(startDestination)
 
-    val authViewModel : AuthViewModel = koinViewModel()
+    val authViewModel : LoginViewModel = koinViewModel()
     NavDisplay(
         backStack = backstack,
         onBack = {backstack.removeLastOrNull()},
@@ -55,22 +54,22 @@ fun AppNavHost(
                         backstack.add(Destination.Main)
 //                        backstack.replaceAll(Destination.Main) NOT WORKING THIS WAY
                     },
-                    onRegisterClick ={
-                        backstack.add(Destination.Register)
-                    }
+//                    onRegisterClick ={
+//                        backstack.add(Destination.Register)
+//                    }
                 )
             }
-            entry<Destination.Register>{key->
-                RegisterScreen(
-                    viewModel = authViewModel,
-                    onRegisterSuccess = {
-                        backstack.add(Destination.Login)
-                    },
-                    onBackToLogin = {
-                        backstack.removeLastOrNull()
-                    }
-                )
-            }
+//            entry<Destination.Register>{key->
+//                RegisterScreen(
+//                    viewModel = authViewModel,
+//                    onRegisterSuccess = {
+//                        backstack.add(Destination.Login)
+//                    },
+//                    onBackToLogin = {
+//                        backstack.removeLastOrNull()
+//                    }
+//                )
+//            }
             entry<Destination.Main>{key->
                 MainScaffold(
                     onLogout = {

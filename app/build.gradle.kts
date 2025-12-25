@@ -45,6 +45,14 @@ dependencies {
     implementation(libs.androidx.compose.animation.core)
     implementation(libs.androidx.room.ktx)
     implementation(libs.androidx.material3)
+
+    //coil
+    implementation("io.coil-kt:coil-compose:2.7.0")
+    //google
+    // Google Credential Manager (The modern way to login)
+    implementation("androidx.credentials:credentials:1.5.0")
+    implementation("androidx.credentials:credentials-play-services-auth:1.5.0")
+    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
     //retrofit
     val retrofit_version = "2.9.0" // Check for the latest version
     val okhttp_version = "4.12.0" // Check for the latest version

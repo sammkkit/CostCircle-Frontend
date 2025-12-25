@@ -1,7 +1,7 @@
 package com.samkit.costcircle.data.auth.repository
 
-import com.samkit.costcircle.data.auth.dto.LoginRequestDto
-import com.samkit.costcircle.data.auth.dto.RegisterRequestDto
+import com.samkit.costcircle.data.auth.dto.AuthResponse
+import com.samkit.costcircle.data.auth.dto.GoogleLoginRequest
 import com.samkit.costcircle.data.auth.remote.AuthApiService
 import com.samkit.costcircle.data.auth.session.SessionManager
 
@@ -10,30 +10,29 @@ class AuthRepository(
     private val sessionManager: SessionManager
 ) {
 
-    suspend fun login(email: String, password: String) {
-        val response = api.login(
-            LoginRequestDto(email, password)
-        )
-        sessionManager.saveToken(response.token)
-        sessionManager.saveUserId(response.user.id)
-    }
+    // ✅ Google Login: Handles API call + Session Saving
+    suspend fun googleLogin(idToken: String): Result<AuthResponse> {
+        return try {
+            // 1. Call API
+            val response = api.googleLogin(GoogleLoginRequest(idToken))
 
-    fun getCurrentUserId(): Long = sessionManager.getUserId()
-    suspend fun register(
-        name: String,
-        email: String,
-        password: String
-    ) {
-        val response = api.register(
-            RegisterRequestDto(name, email, password)
-        )
+            // 2. Save Session Data (Repository responsibility)
+            sessionManager.saveToken(response.token)
+            sessionManager.saveUserId(response.user.id)
 
+            // 3. Return Success
+            Result.success(response)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Result.failure(e)
+        }
     }
 
     fun logout() {
         sessionManager.clear()
     }
 
-    fun isLoggedIn(): Boolean =
-        sessionManager.getToken() != null
+    fun isLoggedIn(): Boolean = sessionManager.getToken() != null
+
+    fun getCurrentUserId(): Long = sessionManager.getUserId()
 }

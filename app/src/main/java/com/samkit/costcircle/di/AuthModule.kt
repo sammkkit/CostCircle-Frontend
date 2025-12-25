@@ -2,7 +2,7 @@ package com.samkit.costcircle.di
 
 import com.samkit.costcircle.data.auth.remote.AuthApiService
 import com.samkit.costcircle.data.auth.repository.AuthRepository
-import com.samkit.costcircle.ui.screens.auth.AuthViewModel
+import com.samkit.costcircle.ui.screens.auth.LoginViewModel
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
 import retrofit2.Retrofit
@@ -21,8 +21,9 @@ val authModule = module {
     }
 
     viewModel {
-        AuthViewModel(
-            authRepository = get()
+        LoginViewModel(
+            authRepository = get(),
+            sessionManager = get()
         )
     }
 }
