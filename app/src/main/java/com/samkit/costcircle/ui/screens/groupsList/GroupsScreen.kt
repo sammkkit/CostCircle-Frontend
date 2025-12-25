@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
@@ -39,6 +40,7 @@ import kotlin.math.min
 fun GroupsScreen(
     onGroupClick: (Long, String) -> Unit,
     onAddGroupClick: () -> Unit = {},
+    onAddExpenseClick:()->Unit ={},
     viewModel: GroupsViewModel = koinViewModel(),
     paddingMain: PaddingValues
 ) {
@@ -107,6 +109,20 @@ fun GroupsScreen(
                     onEvent = viewModel::onEvent
                 )
             }
+        },
+        floatingActionButton = {
+            // Only show FAB if we have groups (Success State)
+            if (state is GroupsContract.State.Success) {
+                ExtendedFloatingActionButton(
+                    onClick = onAddExpenseClick,
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                    icon = { Icon(Icons.Default.Edit, contentDescription = null) }, // Using Edit icon to distinguish from "Create Group"
+                    text = { Text("Add expense") },
+                    expanded = scrollState.firstVisibleItemIndex == 0,
+                    modifier = Modifier.padding(bottom = paddingMain.calculateBottomPadding())
+                )
+            }
         }
     ) { padding ->
         // --- WRAP CONTENT IN PULL REFRESH BOX ---
@@ -151,8 +167,12 @@ fun GroupsScreen(
                         }
                     }
 
-                    GroupsContract.State.Empty -> GroupsEmpty {
-                        viewModel.onEvent(GroupsContract.Event.Retry)
+                    GroupsContract.State.Empty -> {
+                        GroupsEmpty(
+                            onCreateGroupClick = {
+                                viewModel.onEvent(GroupsContract.Event.CreateGroupClicked)
+                            }
+                        )
                     }
 
                     is GroupsContract.State.Error -> GroupsError(

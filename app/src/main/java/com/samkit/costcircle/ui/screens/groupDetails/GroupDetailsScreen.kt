@@ -61,6 +61,7 @@ fun GroupDetailsScreen(
     groupId: Long,
     groupName: String,
     onBack: () -> Unit,
+    NavigateToAddExpense:()->Unit={}
 ) {
     val viewModel: GroupDetailsViewModel = koinViewModel(
         key = "GroupDetails-$groupId"
@@ -73,6 +74,9 @@ fun GroupDetailsScreen(
     var showAddMemberDialog by remember { mutableStateOf(false) }
     var showMembersSheet by remember { mutableStateOf(false) }
     val lifecycleOwner = LocalLifecycleOwner.current
+    LaunchedEffect(Unit) {
+        viewModel.onEvent(GroupDetailsContract.Event.Load)
+    }
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
@@ -97,8 +101,10 @@ fun GroupDetailsScreen(
                         )
                     }
                 }
-
                 GroupDetailsContract.Effect.OpenMembersSheet -> showMembersSheet = true
+                GroupDetailsContract.Effect.AddExpenseNavigate -> {
+                    NavigateToAddExpense()
+                }
             }
         }
     }
@@ -251,7 +257,9 @@ fun GroupDetailsScreen(
         floatingActionButton = {
             // Modern FAB for adding expense
             FloatingActionButton(
-                onClick = { /* Navigate to Add Expense */ },
+                onClick = {
+                    viewModel.onEvent(GroupDetailsContract.Event.AddExpenseClicked)
+                },
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary
             ) {
@@ -306,7 +314,11 @@ fun GroupDetailsScreen(
                             )
 
                         } else {
-                            TransactionList(currentState.transactions)
+                            TransactionList(
+                                transactions = currentState.transactions,
+                                members = currentState.members,     // Pass the members list from state
+                                currentUserId = currentUserId ?: 0L // Pass the ID (handle null safety)
+                            )
                         }
                     }
                 }

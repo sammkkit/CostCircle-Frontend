@@ -27,6 +27,7 @@ object GroupDetailsContract {
         data object Retry : Event
         data object BackClicked : Event
         data object MemberListClicked : Event
+        data object AddExpenseClicked: Event
         // NEW: Handle tab switching in the UI
         data class TabSelected(val index: Int) : Event
 
@@ -39,6 +40,7 @@ object GroupDetailsContract {
     sealed interface Effect {
         data object NavigateBack : Effect
         data object OpenMembersSheet : Effect
+        data object AddExpenseNavigate : Effect
         // NEW: Provide feedback for member addition
         data class ShowToast(val message: String) : Effect
     }

@@ -61,6 +61,9 @@ class GroupDetailsViewModel(
                 sendEffect(GroupDetailsContract.Effect.OpenMembersSheet)
             }
             is GroupDetailsContract.Event.SettleUpClicked -> performSettleUp(event.settlement)
+            GroupDetailsContract.Event.AddExpenseClicked -> {
+                sendEffect(GroupDetailsContract.Effect.AddExpenseNavigate)
+            }
         }
     }
     private fun performSettleUp(settlement: SettlementEntryDto) {

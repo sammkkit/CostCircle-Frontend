@@ -99,6 +99,9 @@ fun AppNavHost(
                     groupId = key.groupId,
                     onBack = {
                         backstack.removeLastOrNull()
+                    },
+                    NavigateToAddExpense={
+                        backstack.add(Destination.AddExpense)
                     }
                 )
             }

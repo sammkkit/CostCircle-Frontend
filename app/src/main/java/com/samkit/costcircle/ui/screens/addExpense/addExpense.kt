@@ -35,6 +35,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -52,6 +53,10 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.samkit.costcircle.data.group.dto.GroupSummaryDto
 import com.samkit.costcircle.ui.screens.addExpense.components.ExpenseSplitSheet
 import com.samkit.costcircle.ui.screens.addExpense.components.GroupSelectionSheet
@@ -72,7 +77,18 @@ fun AddExpenseScreen(
     // Sheet States
     var showGroupSheet by remember { mutableStateOf(false) }
     var showSplitSheet by remember { mutableStateOf(false) } // <--- NEW
-
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.onEvent(AddExpenseContract.Event.LoadGroups)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
     LaunchedEffect(Unit) {
         viewModel.effect.collect { effect ->
             when (effect) {

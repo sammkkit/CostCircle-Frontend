@@ -1,20 +1,14 @@
 package com.samkit.costcircle.data.group.dto
 
-import com.google.gson.annotations.SerializedName
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class TransactionDto(
     val id: Long,
-
-    val description: String?,
-
+    val description: String?, // "Payment" or "Dinner"
     val amount: Double,
-
-    @SerializedName("created_at")
-    val createdAt: String?,
-
-    @SerializedName("paid_by_name")
-    val paidByName: String?,
-
-    @SerializedName("was_paid_by_me")
-    val wasPaidByMe: Boolean
+    val payerId: Long,
+    val receiverId: Long? = null, // Only for SETTLEMENT
+    val createdAt: String,
+    val type: String // "EXPENSE" or "SETTLEMENT"
 )
