@@ -11,7 +11,8 @@ sealed interface Destination {
     data object Login : Destination, NavKey
     @Serializable
     data object Register : Destination, NavKey
-
+    @Serializable
+    data object Splash : Destination, NavKey
     // One-off screens
     @Serializable
     data object AddExpense : Destination, NavKey

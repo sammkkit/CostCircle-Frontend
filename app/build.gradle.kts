@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     id("org.jetbrains.kotlin.plugin.serialization") version "2.0.21"
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -15,16 +16,16 @@ android {
         applicationId = "com.samkit.costcircle"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0.0-beta"
+        versionCode = 2
+        versionName = "1.0.0-beta.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
         release {
-            isMinifyEnabled = true // Turns on R8
-            isShrinkResources = true // Removes unused images/layouts
+            isMinifyEnabled = false // Turns on R8
+            isShrinkResources = false // Removes unused images/layouts
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
@@ -45,7 +46,13 @@ dependencies {
     implementation(libs.androidx.compose.animation.core)
     implementation(libs.androidx.room.ktx)
     implementation(libs.androidx.material3)
-
+    //firebase
+    implementation(platform("com.google.firebase:firebase-bom:34.7.0"))
+    implementation("com.google.firebase:firebase-analytics")
+    //splash
+    implementation("androidx.core:core-splashscreen:1.2.0")
+    //lottie
+    implementation("com.airbnb.android:lottie-compose:6.7.1")
     //coil
     implementation("io.coil-kt:coil-compose:2.7.0")
     //google

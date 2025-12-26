@@ -46,30 +46,24 @@ fun AppNavHost(
         backStack = backstack,
         onBack = {backstack.removeLastOrNull()},
         entryProvider = entryProvider {
+            entry<Destination.Splash> {
+                SplashScreen(
+                    sessionManager = sessionManager,
+                    onFinished = { destination ->
+                        backstack.clear()
+                        backstack.add(destination)
+                    }
+                )
+            }
             entry<Destination.Login>{key->
                 LoginScreen(
                     viewModel = authViewModel,
                     onLoginSuccess = {
                         backstack.clear()
                         backstack.add(Destination.Main)
-//                        backstack.replaceAll(Destination.Main) NOT WORKING THIS WAY
-                    },
-//                    onRegisterClick ={
-//                        backstack.add(Destination.Register)
-//                    }
+                    }
                 )
             }
-//            entry<Destination.Register>{key->
-//                RegisterScreen(
-//                    viewModel = authViewModel,
-//                    onRegisterSuccess = {
-//                        backstack.add(Destination.Login)
-//                    },
-//                    onBackToLogin = {
-//                        backstack.removeLastOrNull()
-//                    }
-//                )
-//            }
             entry<Destination.Main>{key->
                 MainScaffold(
                     onLogout = {
