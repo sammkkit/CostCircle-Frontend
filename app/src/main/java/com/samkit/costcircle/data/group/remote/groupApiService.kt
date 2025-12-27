@@ -3,6 +3,7 @@ package com.samkit.costcircle.data.group.remote
 import com.samkit.costcircle.data.auth.dto.UserDto
 import com.samkit.costcircle.data.group.dto.*
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Path
@@ -52,4 +53,14 @@ interface GroupApiService {
         @Path("groupId") groupId: Long,
         @Body request: SettleUpRequest
     ): SettleUpResponse
+
+    @POST("user/check-user")
+    suspend fun checkUserExists(
+        @Body request: Map<String, String> // We can just send a map { "email": "..." }
+    ): Unit
+
+    @DELETE("groups/{groupId}")
+    suspend fun deleteGroup(
+        @Path("groupId") groupId: Long
+    ): Unit // We just need 200 OK
 }

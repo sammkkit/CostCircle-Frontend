@@ -11,6 +11,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import retrofit2.HttpException
 
 class GroupDetailsViewModel(
     private val groupId: Long,
@@ -25,11 +26,15 @@ class GroupDetailsViewModel(
     private val _effect = Channel<GroupDetailsContract.Effect>(Channel.BUFFERED)
     val effect = _effect.receiveAsFlow()
 
+    private var isGroupDeleted = false
+
     init {
         viewModelScope.launch {
             repository.groupsRefreshTrigger.collect {
                 // Silently refresh details without showing full-screen loading
-                loadDetails(showLoading = false)
+                if (!isGroupDeleted && _state.value is GroupDetailsContract.State.Success) {
+                    loadDetails(showLoading = false)
+                }
             }
         }
         onEvent(GroupDetailsContract.Event.Load)
@@ -64,6 +69,29 @@ class GroupDetailsViewModel(
             GroupDetailsContract.Event.AddExpenseClicked -> {
                 sendEffect(GroupDetailsContract.Effect.AddExpenseNavigate)
             }
+            GroupDetailsContract.Event.DeleteGroupClicked -> deleteGroup()
+        }
+    }
+    private fun deleteGroup() {
+        viewModelScope.launch {
+            // 🛡️ SAFETY NET: Catch the error here so the app doesn't crash
+            runCatching {
+                isGroupDeleted = true
+                repository.deleteGroup(groupId)
+            }.onSuccess {
+                sendEffect(GroupDetailsContract.Effect.ShowToast("Group deleted successfully"))
+                sendEffect(GroupDetailsContract.Effect.NavigateBack)
+            }.onFailure { e ->
+                // Check if it's a 403 Forbidden error
+                isGroupDeleted = false
+                val errorMessage = if (e is HttpException && e.code() == 403) {
+                    "Only the group admin can delete this group"
+                } else {
+                    e.message ?: "Failed to delete group"
+                }
+
+                sendEffect(GroupDetailsContract.Effect.ShowToast(errorMessage))
+            }
         }
     }
     private fun performSettleUp(settlement: SettlementEntryDto) {
@@ -92,13 +120,9 @@ class GroupDetailsViewModel(
 
             runCatching {
                 // Parallel fetching to optimize performance
-                val settlementsDeferred = async { repository.getGroupFinancialSummary(groupId) }
-                val transactionsDeferred = async { repository.getGroupTransactions(groupId) }
-                val membersDef = async { repository.getGroupMembers(groupId) }
-
-                val settlementsResponse = settlementsDeferred.await()
-                val transactionsList = transactionsDeferred.await()
-                val members = membersDef.await()
+                val settlementsResponse = repository.getGroupFinancialSummary(groupId)
+                val transactionsList = repository.getGroupTransactions(groupId)
+                val members = repository.getGroupMembers(groupId)
                 Log.d("GroupRepository", "Fetching group transactions for groupId: $transactionsList")
 
                 // If both are empty, show Empty state; otherwise Success
@@ -114,11 +138,15 @@ class GroupDetailsViewModel(
                     )
                 }
             }.onSuccess { newState ->
-                _state.value = newState
+                if (!isGroupDeleted) {
+                    _state.value = newState
+                }
             }.onFailure { e ->
-                _state.value = GroupDetailsContract.State.Error(
-                    e.message ?: "Failed to load group details"
-                )
+                if (!isGroupDeleted) {
+                    _state.value = GroupDetailsContract.State.Error(
+                        e.message ?: "Failed to load group details"
+                    )
+                }
             }
         }
     }

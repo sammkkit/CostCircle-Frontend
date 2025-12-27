@@ -35,6 +35,7 @@ object GroupDetailsContract {
         data class AddMembers(val emails: List<String>) : Event
         data class SettleUpClicked(val settlement: SettlementEntryDto) : Event
         data object OnResume : Event
+        data object DeleteGroupClicked : Event
     }
 
     sealed interface Effect {

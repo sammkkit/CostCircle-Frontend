@@ -122,35 +122,50 @@ class NewGroupViewModel(
 //            }
 //        }
 //    }
-private fun createGroupWithMembers() {
-    val currentState = _state.value
-    viewModelScope.launch {
-        try {
-            _state.value = currentState.copy(isLoading = true)
+    // In NewGroupViewModel.kt
 
-            // 1. Create Group
-            val response = repository.createGroup(currentState.groupName.trim())
+    private fun createGroupWithMembers() {
+        val currentState = _state.value
+        viewModelScope.launch {
+            try {
+                _state.value = currentState.copy(isLoading = true)
 
-            // 2. Add Members
-            if (currentState.members.isNotEmpty()) {
-                val memberResponse = repository.addMembersBulk(response.groupId, currentState.members)
-
-                // If some emails were missing, we can pass that info to the UI
-                if (memberResponse.missingEmails.isNotEmpty()) {
-                    val missing = memberResponse.missingEmails.joinToString(", ")
-                    sendEffect(NewGroupContract.Effect.ShowError("Group created, but $missing not found."))
+                // --- STEP 1: PRE-CHECK (The Fix) ---
+                // Validate all emails BEFORE creating the group.
+                // If any user is invalid, this loop throws an exception,
+                // jumping straight to the catch block.
+                for (email in currentState.members) {
+                    repository.checkUserExists(email)
                 }
-            }
 
-            sendEffect(NewGroupContract.Effect.GroupCreated(response.groupId))
-        } catch (e: Exception) {
-            _state.value = _state.value.copy(isLoading = false)
-            sendEffect(NewGroupContract.Effect.ShowError(e.message ?: "Failed to create group"))
-        } finally {
-            isCreating.set(false)
+                // --- STEP 2: CREATE GROUP ---
+                // We only reach here if ALL emails are valid.
+                val response = repository.createGroup(currentState.groupName.trim())
+
+                // --- STEP 3: ADD MEMBERS ---
+                if (currentState.members.isNotEmpty()) {
+                    val memberResponse = repository.addMembersBulk(response.groupId, currentState.members)
+
+                    // (Optional) Double-check for missing emails returned by bulk API
+                    if (memberResponse.missingEmails.isNotEmpty()) {
+                        val missing = memberResponse.missingEmails.joinToString(", ")
+                        throw Exception("Group created, but failed to add: $missing")
+                    }
+                }
+
+                sendEffect(NewGroupContract.Effect.GroupCreated(response.groupId))
+
+            } catch (e: Exception) {
+                _state.value = _state.value.copy(isLoading = false)
+
+                // This will now show "User not found: abc@gmail.com"
+                // and NO group will be created in the background.
+                sendEffect(NewGroupContract.Effect.ShowError(e.message ?: "Failed to create group"))
+            } finally {
+                isCreating.set(false)
+            }
         }
     }
-}
     private fun sendEffect(effect: NewGroupContract.Effect) {
         viewModelScope.launch { _effect.send(effect) }
     }

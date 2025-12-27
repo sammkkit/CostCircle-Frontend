@@ -87,4 +87,22 @@ class GroupRepository(
 
         return response
     }
+
+    suspend fun checkUserExists(email: String) {
+        try {
+            // Backend expects { "email": "value" }
+            val requestBody = mapOf("email" to email)
+            api.checkUserExists(requestBody)
+        } catch (e: Exception) {
+            // Retrofit throws HttpException for non-2xx codes (like 404)
+            // We re-throw a clean message for the UI
+            throw Exception("User not found: $email")
+        }
+    }
+
+    suspend fun deleteGroup(groupId: Long) {
+        api.deleteGroup(groupId)
+        // Signal to refresh the list (Group is gone, so list must update)
+        _groupsRefreshTrigger.emit(Unit)
+    }
 }
