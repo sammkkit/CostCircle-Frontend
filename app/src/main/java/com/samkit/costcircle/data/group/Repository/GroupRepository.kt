@@ -100,6 +100,11 @@ class GroupRepository(
         }
     }
 
+    // Add this function
+    suspend fun updateFcmToken(token: String) {
+        // Backend expects: { "token": "..." }
+        api.updateFcmToken(mapOf("token" to token))
+    }
     suspend fun deleteGroup(groupId: Long) {
         api.deleteGroup(groupId)
         // Signal to refresh the list (Group is gone, so list must update)

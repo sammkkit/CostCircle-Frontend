@@ -63,4 +63,9 @@ interface GroupApiService {
     suspend fun deleteGroup(
         @Path("groupId") groupId: Long
     ): Unit // We just need 200 OK
+
+    // In GroupApiService.kt
+
+    @POST("user/fcm-token")
+    suspend fun updateFcmToken(@Body body: Map<String, String>)
 }

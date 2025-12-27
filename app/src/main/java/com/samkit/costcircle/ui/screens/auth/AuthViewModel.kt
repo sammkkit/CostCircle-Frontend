@@ -2,6 +2,7 @@ package com.samkit.costcircle.ui.screens.auth
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.messaging.FirebaseMessaging
 import com.samkit.costcircle.data.auth.repository.AuthRepository
 import com.samkit.costcircle.data.auth.session.SessionManager
 import kotlinx.coroutines.channels.Channel
@@ -48,6 +49,7 @@ class LoginViewModel(
                 )
 
                 _state.update { it.copy(isLoading = false) }
+
                 _effect.send(LoginContract.Effect.NavigateToHome)
 
             }.onFailure { error ->

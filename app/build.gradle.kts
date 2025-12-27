@@ -46,9 +46,12 @@ dependencies {
     implementation(libs.androidx.compose.animation.core)
     implementation(libs.androidx.room.ktx)
     implementation(libs.androidx.material3)
+
+
     //firebase
     implementation(platform("com.google.firebase:firebase-bom:34.7.0"))
     implementation("com.google.firebase:firebase-analytics")
+    implementation("com.google.firebase:firebase-messaging:23.4.0")
     //splash
     implementation("androidx.core:core-splashscreen:1.2.0")
     //lottie

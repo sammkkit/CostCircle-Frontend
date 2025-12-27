@@ -20,8 +20,8 @@ class GoogleAuthClient(private val context: Context) {
                 // 1. Configure the Google Sign-In Request
                 val googleIdOption = GetGoogleIdOption.Builder()
                     .setFilterByAuthorizedAccounts(false) // Show all Google accounts, not just previously signed-in ones
-                    .setServerClientId("1074495736310-cp1o1obftp2d8i0obplq4999o2cmoml9.apps.googleusercontent.com") // <--- PASTE WEB CLIENT ID HERE
-                    .setAutoSelectEnabled(true) // Auto-select if only one account exists
+                    .setServerClientId("1074495736310-cp1o1obftp2d8i0obplq4999o2cmoml9.apps.googleusercontent.com")
+                    .setAutoSelectEnabled(false) // Auto-select if only one account exists
                     .build()
 
                 // 2. Build the generic Credential Request
