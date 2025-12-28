@@ -58,6 +58,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.samkit.costcircle.data.group.dto.GroupSummaryDto
+import com.samkit.costcircle.ui.screens.addExpense.components.CategorySelector
 import com.samkit.costcircle.ui.screens.addExpense.components.ExpenseSplitSheet
 import com.samkit.costcircle.ui.screens.addExpense.components.GroupSelectionSheet
 import com.samkit.costcircle.ui.screens.addExpense.components.SimplifiedGroupBottomBar
@@ -191,8 +192,15 @@ fun AddExpenseScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(40.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
+            // 👇 INSERT CATEGORY SELECTOR HERE
+            CategorySelector(
+                selectedCategory = state.selectedCategory,
+                onCategorySelected = { viewModel.onEvent(AddExpenseContract.Event.CategorySelected(it)) }
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
             // Description Input (Kept same)
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconContainer { Icon(Icons.Outlined.Notes, null, tint = MaterialTheme.colorScheme.onSurfaceVariant) }

@@ -33,7 +33,7 @@ fun TotalBalanceCard(owed: Double, owe: Double) {
 
     val animatedNet by animateFloatAsState(
         targetValue = netBalance,
-        animationSpec = tween(durationMillis = 1500, easing = FastOutSlowInEasing),
+        animationSpec = tween(durationMillis = 800, easing = FastOutSlowInEasing),
         label = "Net"
     )
 

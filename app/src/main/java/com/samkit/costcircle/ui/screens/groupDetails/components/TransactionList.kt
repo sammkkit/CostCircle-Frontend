@@ -7,7 +7,6 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -18,15 +17,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.samkit.costcircle.data.auth.dto.UserDto
+import com.samkit.costcircle.data.group.dto.ExpenseCategory
 import com.samkit.costcircle.data.group.dto.TransactionDto
 import java.text.SimpleDateFormat
 import java.util.Locale
+import java.util.TimeZone
 
 @Composable
 fun TransactionList(
     transactions: List<TransactionDto>,
-    members: List<UserDto>, // <--- 1. Add this
-    currentUserId: Long     // <--- 2. Add this
+    members: List<UserDto>,
+    currentUserId: Long
 ) {
     if (transactions.isEmpty()) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -41,8 +42,8 @@ fun TransactionList(
             itemsIndexed(transactions) { _, transaction ->
                 TransactionItem(
                     transaction = transaction,
-                    members = members,           // Passed down from parent
-                    currentUserId = currentUserId // Passed down from parent
+                    members = members,
+                    currentUserId = currentUserId
                 )
             }
         }
@@ -57,21 +58,34 @@ fun TransactionItem(
 ) {
     val isSettlement = transaction.type == "SETTLEMENT"
 
+    // 1. Resolve Category for Icons & Colors
+    val categoryEnum = remember(transaction.category) {
+        ExpenseCategory.fromCode(transaction.category)
+    }
+
     // Resolve Names
     val payerName = members.find { it.id == transaction.payerId }?.name?.split(" ")?.firstOrNull() ?: "Unknown"
     val receiverName = if (transaction.receiverId != null) {
         members.find { it.id == transaction.receiverId }?.name?.split(" ")?.firstOrNull() ?: "Unknown"
     } else null
 
-    // Date Formatting
+    // 2. Updated Date Formatting (Includes Time)
+    // 2. Updated Date Formatting (Robust Fix)
     val dateString = remember(transaction.createdAt) {
         try {
-            val parser = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
-            val date = parser.parse(transaction.createdAt)
-            val formatter = SimpleDateFormat("MMM dd", Locale.getDefault())
-            formatter.format(date ?: "")
+            // 1. Parse UTC string automatically (Handle 'Z' correctly)
+            val instant = java.time.Instant.parse(transaction.createdAt)
+
+            // 2. Convert to User's Phone Timezone (e.g., Asia/Kolkata)
+            val zoneId = java.time.ZoneId.systemDefault()
+            val localDateTime = instant.atZone(zoneId)
+
+            // 3. Format nicely
+            val formatter = java.time.format.DateTimeFormatter.ofPattern("MMM dd • h:mm a")
+            formatter.format(localDateTime)
         } catch (e: Exception) {
-            ""
+            // Fallback: Just show the first 10 chars (Date) if parsing fails
+            transaction.createdAt.take(10)
         }
     }
 
@@ -87,27 +101,30 @@ fun TransactionItem(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // 1. ICON
+            // 3. DYNAMIC ICON BOX
             Box(
                 modifier = Modifier
                     .size(40.dp)
                     .background(
-                        color = if (isSettlement) Color(0xFFE8F5E9) else MaterialTheme.colorScheme.surfaceVariant,
+                        // If Settlement -> Green, Else -> Category Color (e.g., Orange for Food)
+                        color = if (isSettlement) Color(0xFFE8F5E9) else categoryEnum.color,
                         shape = CircleShape
                     ),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = if (isSettlement) Icons.Outlined.CheckCircle else Icons.Default.ReceiptLong,
+                    // If Settlement -> Check, Else -> Category Icon (e.g., Burger)
+                    imageVector = if (isSettlement) Icons.Outlined.CheckCircle else categoryEnum.icon,
                     contentDescription = null,
-                    tint = if (isSettlement) Color(0xFF2E7D32) else MaterialTheme.colorScheme.onSurfaceVariant,
+                    // If Settlement -> Dark Green, Else -> Dark Grey/Black transparency
+                    tint = if (isSettlement) Color(0xFF2E7D32) else Color.Black.copy(alpha = 0.7f),
                     modifier = Modifier.size(20.dp)
                 )
             }
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            // 2. TEXT CONTENT
+            // 4. TEXT CONTENT
             Column(modifier = Modifier.weight(1f)) {
                 if (isSettlement) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -134,14 +151,15 @@ fun TransactionItem(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "${if(transaction.payerId == currentUserId) "You" else payerName} paid",
+                        // Show Category Name in small text (e.g., "Food • You paid")
+                        text = "${categoryEnum.displayName} • ${if(transaction.payerId == currentUserId) "You" else payerName} paid",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
 
-            // 3. AMOUNT & DATE
+            // 5. AMOUNT & TIME
             Column(horizontalAlignment = Alignment.End) {
                 Text(
                     text = "₹${transaction.amount}",

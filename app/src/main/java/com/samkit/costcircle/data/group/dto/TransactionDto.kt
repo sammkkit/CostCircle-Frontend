@@ -10,5 +10,6 @@ data class TransactionDto(
     val payerId: Long,
     val receiverId: Long? = null, // Only for SETTLEMENT
     val createdAt: String,
-    val type: String // "EXPENSE" or "SETTLEMENT"
+    val type: String, // "EXPENSE" or "SETTLEMENT"
+    val category: String? = null
 )

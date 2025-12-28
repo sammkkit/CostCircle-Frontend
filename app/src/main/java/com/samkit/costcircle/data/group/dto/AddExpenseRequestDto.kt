@@ -8,5 +8,6 @@ data class AddExpenseRequest(
     // --- NEW FIELDS ---
     val splitType: SplitType = SplitType.EQUAL, // Defaults to EQUAL
     val splits: List<SplitEntryDto> = emptyList() // Defaults to empty
+    ,val category: String
 
 )

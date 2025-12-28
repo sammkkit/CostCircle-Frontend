@@ -1,5 +1,6 @@
 package com.samkit.costcircle.ui.screens.addExpense.states
 
+import com.samkit.costcircle.data.group.dto.ExpenseCategory
 import com.samkit.costcircle.data.group.dto.GroupSummaryDto
 import com.samkit.costcircle.data.group.dto.SplitType
 
@@ -10,7 +11,7 @@ object AddExpenseContract {
         val isLoadingGroups: Boolean = false,
         val amount: String = "",
         val description: String = "",
-
+        val selectedCategory: ExpenseCategory = ExpenseCategory.GENERAL,
         // --- NEW SPLIT LOGIC ---
         val splitType: SplitType = SplitType.EQUAL,
         val splitMembers: List<UserSplitUiModel> = emptyList(), // The list of people to split with
@@ -26,7 +27,7 @@ object AddExpenseContract {
         data class GroupSelected(val group: GroupSummaryDto) : Event
         data class AmountChanged(val amount: String) : Event
         data class DescriptionChanged(val desc: String) : Event
-
+        data class CategorySelected(val category: ExpenseCategory) : Event
         // --- NEW EVENTS ---
         data class SplitTypeChanged(val type: SplitType) : Event
         data class SplitMemberToggled(val userId: Long) : Event // For EQUAL selection

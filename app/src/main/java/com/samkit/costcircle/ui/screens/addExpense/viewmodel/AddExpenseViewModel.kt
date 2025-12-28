@@ -45,7 +45,9 @@ class AddExpenseViewModel(
                 _state.value = _state.value.copy(amount = event.amount)
                 recalculateSplits() // Recalculate if total changes
             }
-
+            is AddExpenseContract.Event.CategorySelected -> {
+                _state.value = _state.value.copy(selectedCategory = event.category)
+            }
             is AddExpenseContract.Event.DescriptionChanged -> {
                 _state.value = _state.value.copy(description = event.desc)
             }
@@ -186,7 +188,8 @@ class AddExpenseViewModel(
                         description = currentState.description,
                         paidBy = currentUserId ?: 0,
                         splitType = currentState.splitType,
-                        splits = splitsToSend
+                        splits = splitsToSend,
+                        category = currentState.selectedCategory.code
                     )
                 )
             }.onSuccess {
