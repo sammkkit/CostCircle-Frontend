@@ -1,3 +1,5 @@
+import org.bouncycastle.oer.its.etsi102941.Url
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -39,6 +41,7 @@ android {
     buildFeatures {
         compose = true
     }
+
 }
 
 dependencies {
@@ -47,7 +50,17 @@ dependencies {
     implementation(libs.androidx.room.ktx)
     implementation(libs.androidx.material3)
 
+    //charts
+//    implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
+    // Vico for Bar/Line Charts
+//    implementation(libs.vico.compose.m3)
+//    implementation(libs.compose.charts)
+//    implementation("com.patrykandpatryk.vico:core:2.1.2")
+    implementation("com.patrykandpatryk.vico:compose:1.16.1")
+    implementation("com.patrykandpatryk.vico:compose-m3:1.16.1")
 
+
+    implementation(libs.androidx.biometric)
     //firebase
     implementation(platform("com.google.firebase:firebase-bom:34.7.0"))
     implementation("com.google.firebase:firebase-analytics")

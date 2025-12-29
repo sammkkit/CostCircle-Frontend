@@ -9,10 +9,21 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.google.firebase.messaging.FirebaseMessaging
+import com.samkit.costcircle.core.utils.BiometricPromptManager
 import com.samkit.costcircle.data.auth.session.SessionManager
 import com.samkit.costcircle.data.group.repository.GroupRepository
 import com.samkit.costcircle.ui.navigation.AppNavHost
@@ -22,7 +33,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
 
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
 
     // Inject dependencies
     private val sessionManager: SessionManager by inject()
@@ -46,13 +57,48 @@ class MainActivity : ComponentActivity() {
         installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-
+        val biometricManager = BiometricPromptManager(this)
         // 2. Logic to ask permission
         askNotificationPermission()
 
         setContent {
             CostCircleTheme {
-                AppNavHost()
+                val isLockEnabled = remember { sessionManager.isBiometricEnabled() }
+
+                // If lock is enabled, start as "Locked" (false). Otherwise, "Unlocked" (true).
+                var isUnlocked by remember { mutableStateOf(!isLockEnabled) }
+
+                // 4. Trigger Authentication if locked
+                LaunchedEffect(Unit) {
+                    if (isLockEnabled) {
+                        biometricManager.showBiometricPrompt(
+                            title = "Unlock CostCircle",
+                            description = "Verify your identity to access your expenses"
+                        )
+
+                        biometricManager.promptResults.collect { result ->
+                            if (result is BiometricPromptManager.BiometricResult.AuthenticationSuccess) {
+                                isUnlocked = true
+                            }
+                            // Optional: If AuthenticationError or Failed, you might want to close the app
+                            // or show a "Retry" button.
+                        }
+                    }
+                }
+
+                // 5. Conditional Rendering
+                if (isUnlocked) {
+                    AppNavHost(
+                        activity = this
+                    )
+                } else {
+                    // Show a blank/logo screen while waiting for Fingerprint
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(MaterialTheme.colorScheme.background)
+                    )
+                }
             }
         }
     }

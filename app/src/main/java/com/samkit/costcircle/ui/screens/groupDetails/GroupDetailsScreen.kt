@@ -1,6 +1,5 @@
-package com.samkit.costcircle.ui.screens.groupdetails
+package com.samkit.costcircle.ui.screens.groupDetails
 
-import android.widget.Toast
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
@@ -9,6 +8,8 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -25,7 +26,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -34,9 +34,12 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.samkit.costcircle.data.group.dto.SettlementEntryDto
+import com.samkit.costcircle.ui.screens.Statistics.GroupStatsScreen
 import com.samkit.costcircle.ui.screens.groupDetails.components.GroupMembersSheet
 import com.samkit.costcircle.ui.screens.groupDetails.components.InviteMemberDialog
 import com.samkit.costcircle.ui.screens.groupDetails.components.TransactionList
+import com.samkit.costcircle.ui.screens.groupdetails.GroupDetailsContract
+import com.samkit.costcircle.ui.screens.groupdetails.GroupDetailsViewModel
 import com.samkit.costcircle.ui.screens.groupdetails.components.GroupDetailsEmpty
 import com.samkit.costcircle.ui.screens.groupdetails.components.GroupDetailsError
 import com.samkit.costcircle.ui.screens.groupdetails.components.GroupDetailsLoading
@@ -108,7 +111,6 @@ fun GroupDetailsScreen(
     }
 
     // --- SHEET & DIALOGS ---
-
     if (showMembersSheet && state is GroupDetailsContract.State.Success) {
         GroupMembersSheet(
             members = (state as GroupDetailsContract.State.Success).members,
@@ -126,15 +128,12 @@ fun GroupDetailsScreen(
         )
     }
 
-    // NEW: Delete Confirmation Dialog
     if (showDeleteConfirmDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirmDialog = false },
             icon = { Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
             title = { Text("Delete Group?") },
-            text = {
-                Text("This will permanently delete the group '$groupName' and remove all expenses and history. This action cannot be undone.")
-            },
+            text = { Text("This will permanently delete the group '$groupName' and remove all expenses and history. This action cannot be undone.") },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -142,14 +141,10 @@ fun GroupDetailsScreen(
                         showDeleteConfirmDialog = false
                     },
                     colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                ) {
-                    Text("Delete")
-                }
+                ) { Text("Delete") }
             },
             dismissButton = {
-                TextButton(onClick = { showDeleteConfirmDialog = false }) {
-                    Text("Cancel")
-                }
+                TextButton(onClick = { showDeleteConfirmDialog = false }) { Text("Cancel") }
             }
         )
     }
@@ -157,6 +152,8 @@ fun GroupDetailsScreen(
     Scaffold(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
+            // ... (Top Bar code remains exactly the same as your previous snippet)
+            // For brevity, assuming the TopBar code is unchanged here
             val titleInteractionSource = remember { MutableInteractionSource() }
             val isTitlePressed by titleInteractionSource.collectIsPressedAsState()
             val titleScale by animateFloatAsState(
@@ -253,12 +250,11 @@ fun GroupDetailsScreen(
                     }
                 },
                 actions = {
-                    // NEW: 3-Dot Menu Logic
                     Box {
                         IconButton(onClick = { showMenu = true }) {
                             Surface(
                                 shape = CircleShape,
-                                color = MaterialTheme.colorScheme.surface, // Clean look for menu trigger
+                                color = MaterialTheme.colorScheme.surface,
                                 tonalElevation = 0.dp,
                                 modifier = Modifier.size(40.dp)
                             ) {
@@ -271,35 +267,26 @@ fun GroupDetailsScreen(
                                 }
                             }
                         }
-
                         DropdownMenu(
                             expanded = showMenu,
                             onDismissRequest = { showMenu = false }
                         ) {
-                            // Option 1: Add Member
                             DropdownMenuItem(
                                 text = { Text("Add Members") },
                                 onClick = {
                                     showMenu = false
                                     showAddMemberDialog = true
                                 },
-                                leadingIcon = {
-                                    Icon(Icons.Default.PersonAdd, contentDescription = null)
-                                }
+                                leadingIcon = { Icon(Icons.Default.PersonAdd, contentDescription = null) }
                             )
-
                             HorizontalDivider()
-
-                            // Option 2: Delete Group (Red Warning Color)
                             DropdownMenuItem(
                                 text = { Text("Delete Group", color = MaterialTheme.colorScheme.error) },
                                 onClick = {
                                     showMenu = false
                                     showDeleteConfirmDialog = true
                                 },
-                                leadingIcon = {
-                                    Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error)
-                                }
+                                leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) }
                             )
                         }
                     }
@@ -311,10 +298,10 @@ fun GroupDetailsScreen(
             )
         },
         floatingActionButton = {
+            // Only show FAB if NOT on the Statistics screen (optional preference)
+            // or keep it everywhere. Let's keep it everywhere for now.
             FloatingActionButton(
-                onClick = {
-                    viewModel.onEvent(GroupDetailsContract.Event.AddExpenseClicked)
-                },
+                onClick = { viewModel.onEvent(GroupDetailsContract.Event.AddExpenseClicked) },
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary
             ) {
@@ -333,49 +320,112 @@ fun GroupDetailsScreen(
                     onInviteFriends = { showAddMemberDialog = true }
                 )
                 is GroupDetailsContract.State.Success -> {
-                    Column {
+                    Column(modifier = Modifier.fillMaxSize()) {
+
+                        // 1. SETUP TABS & PAGER STATE
+                        val tabTitles = listOf("Balances", "Transactions", "Statistics")
+                        val pagerState = rememberPagerState(pageCount = { tabTitles.size })
+
+                        // 2. TAB ROW
                         TabRow(
-                            selectedTabIndex = currentState.selectedTab,
-                            containerColor = MaterialTheme.colorScheme.background,
+                            selectedTabIndex = pagerState.currentPage,
+                            containerColor = MaterialTheme.colorScheme.surface,
                             indicator = { tabPositions ->
                                 TabRowDefaults.SecondaryIndicator(
-                                    Modifier.tabIndicatorOffset(tabPositions[currentState.selectedTab]),
+                                    Modifier.tabIndicatorOffset(tabPositions[pagerState.currentPage]),
                                     color = MaterialTheme.colorScheme.primary
                                 )
                             }
                         ) {
-                            Tab(
-                                selected = currentState.selectedTab == 0,
-                                onClick = { viewModel.onEvent(GroupDetailsContract.Event.TabSelected(0)) },
-                                text = { Text("Balances") }
-                            )
-                            Tab(
-                                selected = currentState.selectedTab == 1,
-                                onClick = { viewModel.onEvent(GroupDetailsContract.Event.TabSelected(1)) },
-                                text = { Text("Transactions") }
-                            )
+                            tabTitles.forEachIndexed { index, title ->
+                                Tab(
+                                    selected = pagerState.currentPage == index,
+                                    onClick = {
+                                        scope.launch {
+                                            pagerState.animateScrollToPage(index)
+                                        }
+                                        // Optional: Notify ViewModel if you need to track this
+                                        // viewModel.onEvent(GroupDetailsContract.Event.TabSelected(index))
+                                    },
+                                    text = { Text(title) }
+                                )
+                            }
                         }
 
-                        if (currentState.selectedTab == 0) {
-                            BalancesList(
-                                groupName = groupName,
-                                settlements = currentState.settlements,
-                                currentUserId = currentUserId,
-                                onSettleClick = { settlement ->
-                                    viewModel.onEvent(GroupDetailsContract.Event.SettleUpClicked(settlement))
+                        // 3. SWIPEABLE CONTENT AREA
+                        HorizontalPager(
+                            state = pagerState,
+                            modifier = Modifier.fillMaxSize()
+                        ) { page ->
+                            when (page) {
+                                0 -> {
+                                    BalancesList(
+                                        groupName = groupName,
+                                        settlements = currentState.settlements,
+                                        currentUserId = currentUserId,
+                                        onSettleClick = { settlement ->
+                                            viewModel.onEvent(
+                                                GroupDetailsContract.Event.SettleUpClicked(settlement)
+                                            )
+                                        }
+                                    )
                                 }
-                            )
-
-                        } else {
-                            TransactionList(
-                                transactions = currentState.transactions,
-                                members = currentState.members,
-                                currentUserId = currentUserId ?: 0L
-                            )
+                                1 -> {
+                                    TransactionList(
+                                        transactions = currentState.transactions,
+                                        members = currentState.members,
+                                        currentUserId = currentUserId ?: 0L
+                                    )
+                                }
+                                2 -> {
+                                    // 4. NEW STATISTICS SCREEN
+                                    StatisticsTab(
+                                        groupId = groupId,
+                                        groupName = groupName
+                                    )
+                                }
+                            }
                         }
                     }
                 }
             }
+        }
+    }
+}
+
+// --- NEW COMPOSABLE FOR STATISTICS ---
+
+@Composable
+fun StatisticsTab(
+    groupName: String,
+    groupId: Long
+) {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+//            Icon(
+//                imageVector = Icons.Default.BarChart,
+//                contentDescription = null,
+//                modifier = Modifier.size(64.dp),
+//                tint = MaterialTheme.colorScheme.secondary
+//            )
+//            Spacer(modifier = Modifier.height(16.dp))
+//            Text(
+//                text = "Statistics for $groupName",
+//                style = MaterialTheme.typography.titleMedium
+//            )
+//            Text(
+//                text = "Coming Soon",
+//                style = MaterialTheme.typography.bodyMedium,
+//                color = MaterialTheme.colorScheme.onSurfaceVariant
+//            )
+
+            GroupStatsScreen(
+                groupId = groupId,
+                onBack = {}
+            )
         }
     }
 }

@@ -54,7 +54,10 @@ interface GroupApiService {
         @Path("groupId") groupId: Long,
         @Body request: SettleUpRequest
     ): SettleUpResponse
-
+    @GET("groups/{groupId}/stats")
+    suspend fun getGroupStats(
+        @Path("groupId") groupId: Long
+    ): GroupStatsDto
     @POST("user/check-user")
     suspend fun checkUserExists(
         @Body request: Map<String, String> // We can just send a map { "email": "..." }

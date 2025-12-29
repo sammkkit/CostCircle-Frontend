@@ -39,6 +39,13 @@ class SessionManager(context: Context) {
         prefs.edit().putLong(KEY_USER_ID, userId).apply()
     }
 
+    fun setBiometricEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean("is_biometric_enabled", enabled).apply()
+    }
+
+    fun isBiometricEnabled(): Boolean {
+        return prefs.getBoolean("is_biometric_enabled", false)
+    }
     // --- Getters ---
     fun getUserId(): Long = prefs.getLong(KEY_USER_ID, 0)
 

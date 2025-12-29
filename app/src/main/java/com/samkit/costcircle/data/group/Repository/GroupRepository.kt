@@ -10,6 +10,7 @@ import com.samkit.costcircle.data.group.dto.BulkMemberResponse
 import com.samkit.costcircle.data.group.dto.CreateGroupRequest
 import com.samkit.costcircle.data.group.dto.CreateGroupResponse
 import com.samkit.costcircle.data.group.dto.GroupFinancialSummaryDto
+import com.samkit.costcircle.data.group.dto.GroupStatsDto
 import com.samkit.costcircle.data.group.dto.GroupSummaryDto
 import com.samkit.costcircle.data.group.dto.SettleUpRequest
 import com.samkit.costcircle.data.group.dto.SettleUpResponse
@@ -113,5 +114,9 @@ class GroupRepository(
 
     suspend fun getUserActivity(page: Int = 1, limit: Int = 50): List<TransactionDto> {
         return api.getUserActivity(page, limit)
+    }
+
+    suspend fun getGroupStats(groupId: Long): GroupStatsDto {
+        return api.getGroupStats(groupId)
     }
 }
