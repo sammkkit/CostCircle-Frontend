@@ -4,6 +4,7 @@ package com.samkit.costcircle.ui.components
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Face
 import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -23,6 +24,14 @@ fun BottomBar(
                 Icon(Icons.Outlined.Home, contentDescription = "Groups")
             },
             label = { Text("Groups") }
+        )
+
+        // 2. NEW: Activity Tab
+        NavigationBarItem(
+            selected = selected == Destination.Activity,
+            onClick = { onSelect(Destination.Activity) },
+            icon = { Icon(Icons.Outlined.Notifications, contentDescription = null) }, // Or History
+            label = { Text("Activity") }
         )
 
         NavigationBarItem(

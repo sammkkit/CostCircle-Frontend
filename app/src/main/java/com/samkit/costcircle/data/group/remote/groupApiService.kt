@@ -7,6 +7,7 @@ import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Path
+import retrofit2.http.Query
 
 interface GroupApiService {
 
@@ -68,4 +69,10 @@ interface GroupApiService {
 
     @POST("user/fcm-token")
     suspend fun updateFcmToken(@Body body: Map<String, String>)
+
+    @GET("user/activity")
+    suspend fun getUserActivity(
+        @Query("page") page: Int,
+        @Query("limit") limit: Int
+    ): List<TransactionDto>
 }

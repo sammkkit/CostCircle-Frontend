@@ -49,42 +49,37 @@ fun TransactionList(
         }
     }
 }
+// ... imports
 
 @Composable
 fun TransactionItem(
     transaction: TransactionDto,
-    members: List<UserDto>,
+    members: List<UserDto> = emptyList(),
     currentUserId: Long
 ) {
     val isSettlement = transaction.type == "SETTLEMENT"
 
-    // 1. Resolve Category for Icons & Colors
     val categoryEnum = remember(transaction.category) {
         ExpenseCategory.fromCode(transaction.category)
     }
 
-    // Resolve Names
-    val payerName = members.find { it.id == transaction.payerId }?.name?.split(" ")?.firstOrNull() ?: "Unknown"
-    val receiverName = if (transaction.receiverId != null) {
-        members.find { it.id == transaction.receiverId }?.name?.split(" ")?.firstOrNull() ?: "Unknown"
-    } else null
+    val payerName = transaction.payerName
+        ?: members.find { it.id == transaction.payerId }?.name?.split(" ")?.firstOrNull()
+        ?: "Unknown"
 
-    // 2. Updated Date Formatting (Includes Time)
-    // 2. Updated Date Formatting (Robust Fix)
+    val receiverName = transaction.receiverName
+        ?: if (transaction.receiverId != null) {
+            members.find { it.id == transaction.receiverId }?.name?.split(" ")?.firstOrNull()
+        } else null ?: "Unknown"
+
     val dateString = remember(transaction.createdAt) {
         try {
-            // 1. Parse UTC string automatically (Handle 'Z' correctly)
             val instant = java.time.Instant.parse(transaction.createdAt)
-
-            // 2. Convert to User's Phone Timezone (e.g., Asia/Kolkata)
             val zoneId = java.time.ZoneId.systemDefault()
             val localDateTime = instant.atZone(zoneId)
-
-            // 3. Format nicely
             val formatter = java.time.format.DateTimeFormatter.ofPattern("MMM dd • h:mm a")
             formatter.format(localDateTime)
         } catch (e: Exception) {
-            // Fallback: Just show the first 10 chars (Date) if parsing fails
             transaction.createdAt.take(10)
         }
     }
@@ -101,22 +96,19 @@ fun TransactionItem(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // 3. DYNAMIC ICON BOX
+            // ... (Icon Box remains the same) ...
             Box(
                 modifier = Modifier
                     .size(40.dp)
                     .background(
-                        // If Settlement -> Green, Else -> Category Color (e.g., Orange for Food)
                         color = if (isSettlement) Color(0xFFE8F5E9) else categoryEnum.color,
                         shape = CircleShape
                     ),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    // If Settlement -> Check, Else -> Category Icon (e.g., Burger)
                     imageVector = if (isSettlement) Icons.Outlined.CheckCircle else categoryEnum.icon,
                     contentDescription = null,
-                    // If Settlement -> Dark Green, Else -> Dark Grey/Black transparency
                     tint = if (isSettlement) Color(0xFF2E7D32) else Color.Black.copy(alpha = 0.7f),
                     modifier = Modifier.size(20.dp)
                 )
@@ -124,8 +116,20 @@ fun TransactionItem(
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            // 4. TEXT CONTENT
+            // 4. TEXT CONTENT (Refactored to show Group Name)
             Column(modifier = Modifier.weight(1f)) {
+
+                // 👇 NEW: Show Group Name (if available)
+                transaction.groupName?.let { groupName ->
+                    Text(
+                        text = groupName.uppercase(),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary, // Or any accent color
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(bottom = 2.dp)
+                    )
+                }
+
                 if (isSettlement) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
@@ -151,7 +155,6 @@ fun TransactionItem(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        // Show Category Name in small text (e.g., "Food • You paid")
                         text = "${categoryEnum.displayName} • ${if(transaction.payerId == currentUserId) "You" else payerName} paid",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -159,7 +162,7 @@ fun TransactionItem(
                 }
             }
 
-            // 5. AMOUNT & TIME
+            // ... (Amount & Date remain the same) ...
             Column(horizontalAlignment = Alignment.End) {
                 Text(
                     text = "₹${transaction.amount}",

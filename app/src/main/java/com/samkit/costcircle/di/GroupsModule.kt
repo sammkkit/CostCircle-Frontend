@@ -3,6 +3,7 @@ package com.samkit.costcircle.di
 
 import com.samkit.costcircle.data.group.remote.GroupApiService
 import com.samkit.costcircle.data.group.repository.GroupRepository
+import com.samkit.costcircle.ui.screens.GlobalActivityFeed.GlobalActivityViewModel
 import com.samkit.costcircle.ui.screens.addExpense.AddExpenseViewModel
 import com.samkit.costcircle.ui.screens.groupdetails.GroupDetailsViewModel
 import com.samkit.costcircle.ui.screens.groupsList.GroupsViewModel
@@ -47,6 +48,13 @@ val groupsModule = module {
     viewModel {
         AddExpenseViewModel(
             get(),get()
+        )
+    }
+
+    viewModel{
+        GlobalActivityViewModel(
+            repository = get(),
+            sessionManager = get()
         )
     }
 

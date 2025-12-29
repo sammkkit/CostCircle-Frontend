@@ -110,4 +110,8 @@ class GroupRepository(
         // Signal to refresh the list (Group is gone, so list must update)
         _groupsRefreshTrigger.emit(Unit)
     }
+
+    suspend fun getUserActivity(page: Int = 1, limit: Int = 50): List<TransactionDto> {
+        return api.getUserActivity(page, limit)
+    }
 }
