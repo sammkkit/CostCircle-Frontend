@@ -2,7 +2,9 @@ package com.samkit.costcircle.ui.screens.activity // Update package if needed
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -18,6 +20,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import com.samkit.costcircle.ui.screens.GlobalActivityFeed.GlobalActivityViewModel
 import com.samkit.costcircle.ui.screens.groupDetails.components.TransactionList
 import org.koin.androidx.compose.koinViewModel
@@ -40,7 +43,7 @@ fun GlobalActivityScreen(
     val refreshState = rememberPullToRefreshState()
 
     Scaffold(
-        modifier = Modifier.padding(bottom = paddingMain.calculateBottomPadding()),
+        modifier = Modifier,
         topBar = {
             TopAppBar(
                 title = { Text("Recent Activity") },
@@ -50,14 +53,17 @@ fun GlobalActivityScreen(
             )
         }
     ) { padding ->
-
+        val combinedPadding = PaddingValues(
+            top = padding.calculateTopPadding(),
+            bottom = paddingMain.calculateBottomPadding() + 80.dp // Add extra space for floating bar
+        )
         // 3. The Material 3 PullToRefreshBox handles everything (Indicator + Swipe Logic)
         PullToRefreshBox(
             isRefreshing = isLoading,
             onRefresh = { viewModel.loadActivity() },
             state = refreshState,
             modifier = Modifier
-                .padding(padding)
+                .padding(top =padding.calculateTopPadding())
                 .fillMaxSize()
         ) {
             if (transactions.isEmpty() && !isLoading) {
@@ -68,9 +74,11 @@ fun GlobalActivityScreen(
                 TransactionList(
                     transactions = transactions,
                     members = emptyList(),
-                    currentUserId = viewModel.currentUserId
+                    currentUserId = viewModel.currentUserId,
                 )
+
             }
         }
+        Spacer(modifier = Modifier.height(400.dp))
     }
 }

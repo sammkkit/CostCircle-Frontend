@@ -95,13 +95,13 @@ fun AccountScreen(
 
             Spacer(modifier = Modifier.height(40.dp))
 
-            AnimatedVisibility(
-                visibleState = visibleState,
-                enter = fadeIn(tween(600, delayMillis = 200)) +
-                        slideInVertically(tween(600, delayMillis = 200)) { it / 4 }
-            ) {
-                StatsCardsRow()
-            }
+//            AnimatedVisibility(
+//                visibleState = visibleState,
+//                enter = fadeIn(tween(600, delayMillis = 200)) +
+//                        slideInVertically(tween(600, delayMillis = 200)) { it / 4 }
+//            ) {
+//                StatsCardsRow()
+//            }
 
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -510,6 +510,7 @@ fun SecurityDialog(
                                 )
                             } else {
                                 isBiometricEnabled = false
+                                sessionManager.setBiometricEnabled(isBiometricEnabled)
                                 // TODO: Save "false" to DataStore
                             }
                         }

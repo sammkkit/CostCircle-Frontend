@@ -42,7 +42,6 @@ class SessionManager(context: Context) {
     fun setBiometricEnabled(enabled: Boolean) {
         prefs.edit().putBoolean("is_biometric_enabled", enabled).apply()
     }
-
     fun isBiometricEnabled(): Boolean {
         return prefs.getBoolean("is_biometric_enabled", false)
     }
