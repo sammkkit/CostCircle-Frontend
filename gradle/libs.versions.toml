@@ -16,13 +16,14 @@ material3 = "1.4.0"
 vico = "1.9.2"
 composeCharts = "0.1.2" # Or "0.2.0" if available
 biometric = "1.2.0-alpha05"
+razorpay = "1.6.41"
 
 [libraries]
 androidx-biometric = { group = "androidx.biometric", name = "biometric-ktx", version.ref = "biometric" }
 
 vico-compose-m3 = { group = "com.patrykandpatrick.vico", name = "compose-m3", version.ref = "vico" }
 vico-compose = { group = "com.patrykandpatrick.vico", name = "compose", version.ref = "vico" }
-
+razorpay = { module = "com.razorpay:checkout", version.ref = "razorpay" }
 compose-charts = { group = "io.github.ehsannarmani", name = "compose-charts", version.ref = "composeCharts" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }

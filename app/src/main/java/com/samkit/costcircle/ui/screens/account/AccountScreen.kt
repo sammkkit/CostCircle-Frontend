@@ -2,7 +2,6 @@ package com.samkit.costcircle.ui.screens.account
 
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.*
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.scaleIn
@@ -25,7 +24,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -38,18 +36,40 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.samkit.costcircle.core.utils.BiometricPromptManager
+import com.samkit.costcircle.core.utils.PaymentManager
 import com.samkit.costcircle.data.auth.session.SessionManager
+import com.samkit.costcircle.ui.subscription.SubscriptionViewModel
+import com.samkit.costcircle.ui.subscription.components.SubscriptionBottomSheet
+import com.samkit.costcircle.ui.subscription.states.SubscriptionContract
+import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
 import org.koin.core.parameter.parametersOf
 
 @Composable
 fun AccountScreen(
     onLogout: () -> Unit,
-    sessionManager: SessionManager = koinInject()
+    sessionManager: SessionManager = koinInject(),
+    // Inject Subscription VM here
+    subViewModel: SubscriptionViewModel = koinViewModel()
 ) {
     val name = sessionManager.getUserName() ?: "CostCircle User"
     val picture = sessionManager.getUserPicture()
     val email = sessionManager.getUserEmail() ?: ""
+
+    // 1. Setup Payment & Subscription State
+    val context = LocalContext.current
+    val activity = context as? AppCompatActivity
+        ?: error("AccountScreen must be hosted in AppCompatActivity")
+
+    // Create PaymentManager linked to this Activity
+    val paymentManager = remember { PaymentManager(activity) }
+
+    // Observe Subscription State
+    val subState by subViewModel.state.collectAsState()
+    val isPremium = (subState as? SubscriptionContract.State.Content)?.isPremium == true
+
+    // Sheet State
+    var showSubscriptionSheet by remember { mutableStateOf(false) }
 
     val scrollState = rememberScrollState()
     val visibleState = remember { MutableTransitionState(false) }.apply { targetState = true }
@@ -69,9 +89,8 @@ fun AccountScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.surface) // Clean base
+            .background(MaterialTheme.colorScheme.surface)
     ) {
-        // Animated background orbs
         AnimatedBackgroundOrbs(floatY)
 
         Column(
@@ -79,46 +98,46 @@ fun AccountScreen(
                 .fillMaxSize()
                 .verticalScroll(scrollState)
                 .padding(horizontal = 24.dp)
-                .navigationBarsPadding() // Handled system bars
+                .navigationBarsPadding()
         ) {
-            Spacer(modifier = Modifier.height(60.dp)) // More top space
+            Spacer(modifier = Modifier.height(60.dp))
 
             AnimatedVisibility(
                 visibleState = visibleState,
-                enter = fadeIn(tween(800)) + scaleIn(
-                    tween(800, easing = FastOutSlowInEasing),
-                    initialScale = 0.9f
-                )
+                enter = fadeIn(tween(800)) + scaleIn(tween(800), initialScale = 0.9f)
             ) {
-                ProfileHeroRevamped(name, email, picture)
+                // 2. Pass Premium State and Click Handler to Hero
+                ProfileHeroRevamped(
+                    name = name,
+                    email = email,
+                    pictureUrl = picture,
+                    isPremium = isPremium,
+                    onBadgeClick = { showSubscriptionSheet = true }
+                )
             }
 
             Spacer(modifier = Modifier.height(40.dp))
 
-//            AnimatedVisibility(
-//                visibleState = visibleState,
-//                enter = fadeIn(tween(600, delayMillis = 200)) +
-//                        slideInVertically(tween(600, delayMillis = 200)) { it / 4 }
-//            ) {
-//                StatsCardsRow()
-//            }
+            // StatsCardsRow() // Uncomment when ready
 
             Spacer(modifier = Modifier.height(24.dp))
 
             AnimatedVisibility(
                 visibleState = visibleState,
-                enter = fadeIn(tween(600, delayMillis = 300)) +
-                        slideInVertically(tween(600, delayMillis = 300)) { it / 4 }
+                enter = fadeIn(tween(600, delayMillis = 300)) + slideInVertically(tween(600)) { it / 4 }
             ) {
-                SettingsCardRevamped()
+                // 3. Pass Click Handler to Settings
+                SettingsCardRevamped(
+                    onSubscriptionClick = { showSubscriptionSheet = true },
+                    isPremium = isPremium
+                )
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
             AnimatedVisibility(
                 visibleState = visibleState,
-                enter = fadeIn(tween(700, delayMillis = 400)) +
-                        slideInVertically(tween(700, delayMillis = 400)) { it / 4 }
+                enter = fadeIn(tween(700, delayMillis = 400)) + slideInVertically(tween(700)) { it / 4 }
             ) {
                 LogoutButtonRevamped(onLogout = {
                     sessionManager.clear()
@@ -128,7 +147,260 @@ fun AccountScreen(
 
             Spacer(modifier = Modifier.height(100.dp))
         }
+
+        // 4. Show Subscription Sheet
+        if (showSubscriptionSheet) {
+            SubscriptionBottomSheet(
+                onDismiss = { showSubscriptionSheet = false },
+                paymentManager = paymentManager,
+                viewModel = subViewModel
+            )
+        }
     }
+}
+
+@Composable
+fun ProfileHeroRevamped(
+    name: String,
+    email: String,
+    pictureUrl: String?,
+    isPremium: Boolean,
+    onBadgeClick: () -> Unit
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier.size(130.dp)
+        ) {
+            Surface(
+                modifier = Modifier.size(120.dp),
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.surface,
+                border = BorderStroke(2.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+                shadowElevation = 10.dp,
+                tonalElevation = 2.dp
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    if (pictureUrl != null) {
+                        AsyncImage(
+                            model = pictureUrl,
+                            contentDescription = "Profile Picture",
+                            modifier = Modifier.fillMaxSize().clip(CircleShape),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(
+                                    Brush.linearGradient(
+                                        colors = listOf(
+                                            MaterialTheme.colorScheme.primaryContainer,
+                                            MaterialTheme.colorScheme.surface
+                                        )
+                                    )
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = name.take(1).uppercase(),
+                                style = MaterialTheme.typography.displayMedium.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Online/Status Indicator
+            Surface(
+                modifier = Modifier
+                    .size(26.dp)
+                    .align(Alignment.BottomEnd)
+                    .offset(x = (-6).dp, y = (-6).dp),
+                shape = CircleShape,
+                color = if (isPremium) Color(0xFFFFD700) else Color(0xFF4CAF50), // Gold if Premium, Green if Free
+                border = BorderStroke(3.dp, MaterialTheme.colorScheme.surface)
+            ) {
+                if(isPremium) {
+                    Icon(Icons.Default.Star, null, tint = Color.White, modifier = Modifier.padding(4.dp))
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Text(
+            text = name,
+            style = MaterialTheme.typography.headlineMedium.copy(
+                fontWeight = FontWeight.Bold,
+                letterSpacing = (-0.5).sp
+            ),
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        Text(
+            text = email,
+            style = MaterialTheme.typography.bodyLarge.copy(
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                letterSpacing = 0.1.sp
+            ),
+            textAlign = TextAlign.Center
+        )
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        // Dynamic Badge based on Premium Status
+        if (isPremium) {
+            // PREMIUM BADGE (Gold/Primary)
+            Surface(
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
+                modifier = Modifier
+                    .height(36.dp)
+                    .clickable(onClick = onBadgeClick) // Click to view plan details
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Verified,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        "Pro Member",
+                        style = MaterialTheme.typography.labelLarge.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    )
+                }
+            }
+        } else {
+            // FREE BADGE (Clickable to Upgrade)
+            Surface(
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.tertiaryContainer,
+                modifier = Modifier
+                    .height(36.dp)
+                    .clickable(onClick = onBadgeClick) // Click to Upgrade
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Diamond, // Diamond icon for upgrade
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        "Upgrade to Pro",
+                        style = MaterialTheme.typography.labelLarge.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onTertiaryContainer
+                        )
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun SettingsCardRevamped(
+    onSubscriptionClick: () -> Unit,
+    isPremium: Boolean
+) {
+    val context = LocalContext.current
+    val activity = context as? AppCompatActivity
+        ?: error("Context is not AppCompatActivity")
+
+    val biometricManager: BiometricPromptManager = koinInject { parametersOf(activity) }
+    val sessionManager: SessionManager = koinInject()
+
+    var showPersonalInfoDialog by remember { mutableStateOf(false) }
+    var showSecurityDialog by remember { mutableStateOf(false) }
+    var showAppearanceDialog by remember { mutableStateOf(false) }
+
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Text(
+            text = "Preferences",
+            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(start = 8.dp)
+        )
+
+        Surface(
+            shape = RoundedCornerShape(28.dp),
+            color = MaterialTheme.colorScheme.surface,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+            shadowElevation = 2.dp,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(vertical = 12.dp, horizontal = 8.dp)) {
+
+                // 1. Subscription (NEW ITEM)
+                SettingsItemRevamped(
+                    icon = Icons.Default.Diamond,
+                    title = if(isPremium) "My Subscription" else "Get Premium",
+                    subtitle = if(isPremium) "Manage your plan" else "Unlock exclusive features",
+                    color = Color(0xFFFFD700), // Gold
+                    onClick = onSubscriptionClick
+                )
+
+                // 2. Personal Info
+                SettingsItemRevamped(
+                    icon = Icons.Default.PersonOutline,
+                    title = "Profile Details",
+                    subtitle = "Display name & avatar",
+                    color = MaterialTheme.colorScheme.primary,
+                    onClick = { showPersonalInfoDialog = true }
+                )
+
+                // 3. Security
+                SettingsItemRevamped(
+                    icon = Icons.Default.Fingerprint,
+                    title = "App Lock & Security",
+                    subtitle = "Biometrics & data",
+                    color = MaterialTheme.colorScheme.tertiary,
+                    onClick = { showSecurityDialog = true }
+                )
+
+                // 4. Appearance
+                SettingsItemRevamped(
+                    icon = Icons.Default.Palette,
+                    title = "Appearance",
+                    subtitle = "Theme & display",
+                    color = Color(0xFFFF6B9D),
+                    isLast = true,
+                    onClick = { showAppearanceDialog = true }
+                )
+            }
+        }
+    }
+
+    if (showPersonalInfoDialog) PersonalInfoDialog(onDismiss = { showPersonalInfoDialog = false })
+    if (showSecurityDialog) SecurityDialog(
+        onDismiss = { showSecurityDialog = false },
+        biometricPromptManager = biometricManager,
+        sessionManager = sessionManager
+    )
 }
 
 @Composable

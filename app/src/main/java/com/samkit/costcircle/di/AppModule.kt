@@ -4,5 +4,6 @@ val appModules = listOf(
     authModule,
     networkModule,
     groupsModule,
-    securityModule
+    securityModule,
+    subscriptionModule
 )

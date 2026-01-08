@@ -1,4 +1,6 @@
 import org.bouncycastle.oer.its.etsi102941.Url
+import java.io.FileInputStream
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
@@ -18,10 +20,22 @@ android {
         applicationId = "com.samkit.costcircle"
         minSdk = 26
         targetSdk = 36
-        versionCode = 3
-        versionName = "1.1.0-beta"
+        versionCode = 4
+        versionName = "1.2.0-beta"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        val localProperties = Properties()
+        val localPropertiesFile = rootProject.file("local.properties")
+        if (localPropertiesFile.exists()) {
+            localProperties.load(FileInputStream(localPropertiesFile))
+        }
+
+        // 2. Extract the key (or use empty string if missing)
+        val razorpayKey = localProperties.getProperty("RAZORPAY_KEY_ID") ?: ""
+
+        // 3. Inject it into BuildConfig
+        buildConfigField("String", "RAZORPAY_KEY_ID", "\"$razorpayKey\"")
     }
 
     buildTypes {
@@ -39,6 +53,7 @@ android {
         jvmTarget = "11"
     }
     buildFeatures {
+        buildConfig = true
         compose = true
     }
 
@@ -49,6 +64,8 @@ dependencies {
     implementation(libs.androidx.compose.animation.core)
     implementation(libs.androidx.room.ktx)
     implementation(libs.androidx.material3)
+    //razor pay
+    implementation(libs.razorpay)
 
     //charts
 //    implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
