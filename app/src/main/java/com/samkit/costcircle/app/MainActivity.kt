@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.google.firebase.messaging.FirebaseMessaging
+import com.razorpay.PaymentResultListener
 import com.samkit.costcircle.core.utils.BiometricPromptManager
 import com.samkit.costcircle.data.auth.session.SessionManager
 import com.samkit.costcircle.data.group.repository.GroupRepository
@@ -33,9 +34,18 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), PaymentResultListener {
 
     // Inject dependencies
+    var paymentListener: PaymentResultListener? = null
+
+    override fun onPaymentSuccess(p0: String?) {
+        paymentListener?.onPaymentSuccess(p0)
+    }
+
+    override fun onPaymentError(p0: Int, p1: String?) {
+        paymentListener?.onPaymentError(p0, p1)
+    }
     private val sessionManager: SessionManager by inject()
     private val repository: GroupRepository by inject()
 
