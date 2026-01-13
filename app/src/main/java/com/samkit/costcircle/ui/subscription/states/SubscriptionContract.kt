@@ -36,7 +36,7 @@ object SubscriptionContract {
         data class LaunchRazorpay(
             val subscriptionId: String,
             val email: String,
-            val phone: String
+            val phone: String?
         ) : Effect
 
         data class ShowToast(val message: String) : Effect

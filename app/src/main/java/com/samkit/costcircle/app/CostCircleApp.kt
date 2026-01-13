@@ -2,6 +2,8 @@ package com.samkit.costcircle.app
 
 import android.app.Application
 import android.util.Log
+import com.google.android.gms.ads.MobileAds
+//import com.google.android.gms.ads.MobileAds
 import com.google.firebase.messaging.FirebaseMessaging
 import com.samkit.costcircle.data.auth.session.SessionManager
 import com.samkit.costcircle.data.group.repository.GroupRepository
@@ -17,7 +19,7 @@ class CostCircleApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
-
+        MobileAds.initialize(this)
         startKoin {
             androidContext(this@CostCircleApp)
             modules(appModules)
