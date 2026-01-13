@@ -74,7 +74,7 @@ class SubscriptionViewModel(
                 sendEffect(SubscriptionContract.Effect.LaunchRazorpay(
                     subscriptionId = response.subscription.id,
                     email = userEmail,
-                    phone = "9999999999" // Optional: You could fetch from profile if available
+                    phone = null
                 ))
             }.onFailure { e ->
                 updateContentState { it.copy(isProcessingPayment = false) }

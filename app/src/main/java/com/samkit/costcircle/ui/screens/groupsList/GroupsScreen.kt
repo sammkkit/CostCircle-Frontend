@@ -29,6 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.samkit.costcircle.core.utils.BannerAd
 import com.samkit.costcircle.ui.screens.groupsList.components.*
 import com.samkit.costcircle.ui.screens.groupsList.states.GroupsContract
 import org.koin.androidx.compose.koinViewModel
@@ -236,7 +237,9 @@ fun GroupsScreen(
                                     )
                                 }
                             }
-
+                            item {
+                                BannerAd()
+                            }
                             // 3. GROUP LIST
                             itemsIndexed(successState.filteredGroups, key = { _, g -> g.groupId }) { index, group ->
                                 val delayMillis = (index * 50).coerceAtMost(300)

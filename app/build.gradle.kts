@@ -66,7 +66,8 @@ dependencies {
     implementation(libs.androidx.material3)
     //razor pay
     implementation(libs.razorpay)
-
+    //ads
+    implementation("com.google.android.gms:play-services-ads:22.6.0")
     //charts
 //    implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
     // Vico for Bar/Line Charts

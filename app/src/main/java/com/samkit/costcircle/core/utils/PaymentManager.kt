@@ -33,7 +33,7 @@ class PaymentManager(
     fun startSubscriptionPayment(
         subscriptionId: String,
         email: String,
-        phone: String = "9999999999" // Dummy or real phone
+        phone: String? = null // Dummy or real phone
     ) {
         val checkout = Checkout()
         checkout.setKeyID(BuildConfig.RAZORPAY_KEY_ID)
@@ -57,7 +57,10 @@ class PaymentManager(
             // User details for pre-fill
             val prefill = JSONObject()
             prefill.put("email", email)
-            prefill.put("contact", phone)
+            // 👈 ONLY add phone if we actually have one
+            if (!phone.isNullOrEmpty()) {
+                prefill.put("contact", phone)
+            }
             options.put("prefill", prefill)
 
             // Launch the Payment Activity
