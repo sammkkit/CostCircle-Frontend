@@ -34,9 +34,16 @@ jobs:
       # 5. Build Release AAB (version auto-bumped)
       - name: Build Release Bundle
         run: |
+          VERSION_CODE=$(date +%s)
+          VERSION_NAME=1.0.$(date +%Y%m%d%H%M)
+
+          echo "VersionCode=$VERSION_CODE"
+          echo "VersionName=$VERSION_NAME"
+
           ./gradlew bundleRelease \
-            -PversionCode=${{ github.run_number }} \
-            -PversionName=1.0.${{ github.run_number }}
+            -PversionCode=$VERSION_CODE \
+            -PversionName=$VERSION_NAME
+      
 
       # 6. 🔐 SIGN THE AAB (CRITICAL)
       - name: Sign Release AAB
