@@ -20,8 +20,10 @@ android {
         applicationId = "com.samkit.costcircle"
         minSdk = 26
         targetSdk = 36
-        versionCode = 4
-        versionName = "1.2.0-beta"
+        versionCode =
+            (project.findProperty("versionCode") as String?)?.toInt() ?: 1
+        versionName =
+            project.findProperty("versionName") as String? ?: "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
