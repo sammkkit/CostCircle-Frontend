@@ -52,6 +52,9 @@ class SessionManager(context: Context) {
 
     fun getUserName(): String? = prefs.getString(KEY_USER_NAME, "User")
 
+    fun setUserName(name: String) {
+        prefs.edit().putString(KEY_USER_NAME, name).apply()
+    }
     fun getUserEmail(): String? = prefs.getString(KEY_USER_EMAIL, "")
 
     fun getUserPicture(): String? = prefs.getString(KEY_USER_PICTURE, null)

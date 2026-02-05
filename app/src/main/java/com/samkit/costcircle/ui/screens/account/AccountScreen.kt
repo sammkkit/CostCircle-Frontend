@@ -45,6 +45,10 @@ import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
 import org.koin.core.parameter.parametersOf
 
+object FeatureFlags {
+    const val SUBSCRIPTIONS_ENABLED = false
+}
+
 @Composable
 fun AccountScreen(
     onLogout: () -> Unit,
@@ -52,7 +56,10 @@ fun AccountScreen(
     // Inject Subscription VM here
     subViewModel: SubscriptionViewModel = koinViewModel()
 ) {
-    val name = sessionManager.getUserName() ?: "CostCircle User"
+
+    var name by remember {
+        mutableStateOf(sessionManager.getUserName() ?: "CostCircle User")
+    }
     val picture = sessionManager.getUserPicture()
     val email = sessionManager.getUserEmail() ?: ""
 
@@ -62,7 +69,11 @@ fun AccountScreen(
         ?: error("AccountScreen must be hosted in AppCompatActivity")
 
     // Create PaymentManager linked to this Activity
-    val paymentManager = remember { PaymentManager(activity) }
+    val paymentManager = remember {
+        if (FeatureFlags.SUBSCRIPTIONS_ENABLED) {
+            PaymentManager(activity)
+        } else null
+    }
 
     // Observe Subscription State
     val subState by subViewModel.state.collectAsState()
@@ -112,7 +123,12 @@ fun AccountScreen(
                     email = email,
                     pictureUrl = picture,
                     isPremium = isPremium,
-                    onBadgeClick = { showSubscriptionSheet = true }
+                    onBadgeClick = {
+                        if (FeatureFlags.SUBSCRIPTIONS_ENABLED) {
+                            showSubscriptionSheet = true
+                        }
+                    }
+
                 )
             }
 
@@ -129,7 +145,13 @@ fun AccountScreen(
                 // 3. Pass Click Handler to Settings
                 SettingsCardRevamped(
                     onSubscriptionClick = { showSubscriptionSheet = true },
-                    isPremium = isPremium
+                    isPremium = isPremium,
+                    name = name,
+                    onNameUpdated = { newName ->
+                        name = newName
+                        sessionManager.setUserName(newName)
+
+                    }
                 )
             }
 
@@ -149,13 +171,14 @@ fun AccountScreen(
         }
 
         // 4. Show Subscription Sheet
-        if (showSubscriptionSheet) {
+        if (FeatureFlags.SUBSCRIPTIONS_ENABLED && showSubscriptionSheet) {
             SubscriptionBottomSheet(
                 onDismiss = { showSubscriptionSheet = false },
                 paymentManager = paymentManager,
                 viewModel = subViewModel
             )
         }
+
     }
 }
 
@@ -290,42 +313,42 @@ fun ProfileHeroRevamped(
                 }
             }
         } else {
-            // FREE BADGE (Clickable to Upgrade)
             Surface(
                 shape = CircleShape,
-                color = MaterialTheme.colorScheme.tertiaryContainer,
-                modifier = Modifier
-                    .height(36.dp)
-                    .clickable(onClick = onBadgeClick) // Click to Upgrade
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                modifier = Modifier.height(36.dp)
             ) {
                 Row(
                     modifier = Modifier.padding(horizontal = 16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Diamond, // Diamond icon for upgrade
+                        imageVector = Icons.Default.CheckCircle,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(16.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        "Upgrade to Pro",
+                        "Free Plan",
                         style = MaterialTheme.typography.labelLarge.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onTertiaryContainer
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     )
                 }
             }
         }
+
     }
 }
 
 @Composable
 fun SettingsCardRevamped(
     onSubscriptionClick: () -> Unit,
-    isPremium: Boolean
+    isPremium: Boolean,
+    name: String,
+    onNameUpdated: (String) -> Unit
 ) {
     val context = LocalContext.current
     val activity = context as? AppCompatActivity
@@ -356,13 +379,16 @@ fun SettingsCardRevamped(
             Column(modifier = Modifier.padding(vertical = 12.dp, horizontal = 8.dp)) {
 
                 // 1. Subscription (NEW ITEM)
-                SettingsItemRevamped(
-                    icon = Icons.Default.Diamond,
-                    title = if(isPremium) "My Subscription" else "Get Premium",
-                    subtitle = if(isPremium) "Manage your plan" else "Unlock exclusive features",
-                    color = Color(0xFFFFD700), // Gold
-                    onClick = onSubscriptionClick
-                )
+                if (FeatureFlags.SUBSCRIPTIONS_ENABLED) {
+                    SettingsItemRevamped(
+                        icon = Icons.Default.Diamond,
+                        title = if(isPremium) "My Subscription" else "Get Premium",
+                        subtitle = if(isPremium) "Manage your plan" else "Unlock exclusive features",
+                        color = Color(0xFFFFD700),
+                        onClick = onSubscriptionClick
+                    )
+                }
+
 
                 // 2. Personal Info
                 SettingsItemRevamped(
@@ -394,8 +420,15 @@ fun SettingsCardRevamped(
             }
         }
     }
+    if (showPersonalInfoDialog) {
+        PersonalInfoDialog(
+            name = name,
+            email = sessionManager.getUserEmail() ?: "not available",
+            onDismiss = { showPersonalInfoDialog = false },
+            onNameChange = onNameUpdated
+        )
+    }
 
-    if (showPersonalInfoDialog) PersonalInfoDialog(onDismiss = { showPersonalInfoDialog = false })
     if (showSecurityDialog) SecurityDialog(
         onDismiss = { showSecurityDialog = false },
         biometricPromptManager = biometricManager,
@@ -648,81 +681,6 @@ fun StatCard(
 }
 
 @Composable
-fun SettingsCardRevamped() {
-    // State for the dialogs
-    // 1. Get the Activity from Compose Context
-    val context = LocalContext.current
-    // We need to cast it safely to AppCompatActivity
-    val activity = context as? AppCompatActivity
-        ?: error("Context is not AppCompatActivity. Ensure MainActivity extends AppCompatActivity")
-    val biometricManager: BiometricPromptManager = koinInject { parametersOf(activity) }
-    val sessionManager: SessionManager = koinInject()
-    var showPersonalInfoDialog by remember { mutableStateOf(false) }
-    var showSecurityDialog by remember { mutableStateOf(false) }
-    var showAppearanceDialog by remember { mutableStateOf(false) }
-
-    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        Text(
-            text = "Preferences",
-            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(start = 8.dp)
-        )
-
-        Surface(
-            shape = RoundedCornerShape(28.dp),
-            color = MaterialTheme.colorScheme.surface,
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
-            shadowElevation = 2.dp,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(modifier = Modifier.padding(vertical = 12.dp, horizontal = 8.dp)) {
-                // Option 1: Personal Info
-                SettingsItemRevamped(
-                    icon = Icons.Default.PersonOutline,
-                    title = "Profile Details",
-                    subtitle = "Display name & avatar",
-                    color = MaterialTheme.colorScheme.primary,
-                    onClick = { showPersonalInfoDialog = true }
-                )
-
-                // Option 2: Security (Biometrics instead of Password)
-                SettingsItemRevamped(
-                    icon = Icons.Default.Fingerprint, // 👈 Changed Icon
-                    title = "App Lock & Security",    // 👈 Changed Title
-                    subtitle = "Biometrics & data",
-                    color = MaterialTheme.colorScheme.tertiary,
-                    onClick = { showSecurityDialog = true }
-                )
-
-                // Option 3: Appearance
-                SettingsItemRevamped(
-                    icon = Icons.Default.Palette,
-                    title = "Appearance",
-                    subtitle = "Theme & display",
-                    color = Color(0xFFFF6B9D),
-                    isLast = true,
-                    onClick = { showAppearanceDialog = true }
-                )
-            }
-        }
-    }
-
-    // --- DIALOGS (The actual "Sensible Options") ---
-
-    if (showPersonalInfoDialog) {
-        PersonalInfoDialog(onDismiss = { showPersonalInfoDialog = false })
-    }
-
-    if (showSecurityDialog) {
-        SecurityDialog(
-            onDismiss = { showSecurityDialog = false },
-            biometricPromptManager = biometricManager,
-            sessionManager=sessionManager
-        )
-    }
-}
-@Composable
 fun SecurityDialog(
     onDismiss: () -> Unit,
     biometricPromptManager: BiometricPromptManager,
@@ -796,50 +754,50 @@ fun SecurityDialog(
     )
 }
 @Composable
-fun PersonalInfoDialog(onDismiss: () -> Unit) {
+fun PersonalInfoDialog(
+    name: String,
+    email: String,
+    onDismiss: () -> Unit,
+    onNameChange: (String) -> Unit
+) {
+    var localName by remember { mutableStateOf(name) }
+
     AlertDialog(
         onDismissRequest = onDismiss,
-        icon = { Icon(Icons.Default.Person, contentDescription = null) },
         title = { Text("Edit Profile") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                // Editable Display Name
+
                 OutlinedTextField(
-                    value = "Samkit Jain", // Replace with real state
-                    onValueChange = { /* Update State */ },
+                    value = localName,
+                    onValueChange = { localName = it }, // 🧠 LOCAL only
                     label = { Text("Display Name") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                // Read-Only Email
                 OutlinedTextField(
-                    value = "samkit@gmail.com",
+                    value = email,
                     onValueChange = {},
-                    label = { Text("Email (Google)") },
-                    readOnly = true,
                     enabled = false,
-                    leadingIcon = {
-                        // Google G Icon (or generic mail)
-                        Icon(Icons.Default.Email, contentDescription = null)
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        disabledBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
-                        disabledTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                    )
-                )
-                Text(
-                    "To change your email or password, please manage your Google Account settings.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    label = { Text("Email (Google)") }
                 )
             }
         },
-        confirmButton = { Button(onClick = onDismiss) { Text("Save") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
+        confirmButton = {
+            Button(onClick = {
+                onNameChange(localName)  // ✅ commit ONCE
+                onDismiss()
+            }) {
+                Text("Save")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        }
     )
 }
+
 @Composable
 private fun SettingsItemRevamped(
     icon: ImageVector,

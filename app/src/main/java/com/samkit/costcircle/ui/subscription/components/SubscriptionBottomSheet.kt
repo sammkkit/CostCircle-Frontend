@@ -2,7 +2,6 @@ package com.samkit.costcircle.ui.subscription.components
 
 
 import android.widget.Toast
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -11,18 +10,15 @@ import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Diamond
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.samkit.costcircle.core.utils.PaymentManager
 import com.samkit.costcircle.ui.subscription.SubscriptionViewModel
 import com.samkit.costcircle.ui.subscription.states.SubscriptionContract
@@ -33,7 +29,7 @@ import org.koin.androidx.compose.koinViewModel
 fun SubscriptionBottomSheet(
     onDismiss: () -> Unit,
     // We pass PaymentManager from the Activity/Screen level
-    paymentManager: PaymentManager,
+    paymentManager: PaymentManager?,
     viewModel: SubscriptionViewModel = koinViewModel()
 ) {
     val state by viewModel.state.collectAsState()
@@ -44,7 +40,7 @@ fun SubscriptionBottomSheet(
         viewModel.effect.collect { effect ->
             when (effect) {
                 is SubscriptionContract.Effect.LaunchRazorpay -> {
-                    paymentManager.startSubscriptionPayment(
+                    paymentManager?.startSubscriptionPayment(
                         subscriptionId = effect.subscriptionId,
                         email = effect.email,
                         phone = effect.phone
@@ -60,7 +56,7 @@ fun SubscriptionBottomSheet(
 
     // 2. Listen for Razorpay SDK Results (Success/Failure)
     LaunchedEffect(paymentManager) {
-        paymentManager.paymentResult.collect { result ->
+        paymentManager?.paymentResult?.collect { result ->
             when (result) {
                 is PaymentManager.PaymentResult.Success -> {
                     viewModel.onEvent(SubscriptionContract.Event.PaymentSuccess)
