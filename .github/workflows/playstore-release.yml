@@ -31,20 +31,24 @@ jobs:
       - name: Grant execute permission
         run: chmod +x gradlew
 
-      # 5. Build Release AAB (version auto-bumped)
+      # 5. Build Release AAB (Sequential Versioning)
       - name: Build Release Bundle
         run: |
-          VERSION_CODE=$(date +%s)
-          VERSION_NAME=1.0.$(date +%Y%m%d%H%M)
+          # Use an offset because your previous versions are already very high (Unix timestamps)
+          # Replace '1700000000' with a number slightly higher than your last successful upload
+          OFFSET=1770309598 
+          VERSION_CODE=$((OFFSET + ${{ github.run_number }}))
+          
+          # Manually set your Base Version here
+          BASE_VERSION="5.0"
+          VERSION_NAME="$BASE_VERSION.${{ github.run_number }}"
 
-          echo "VersionCode=$VERSION_CODE"
-          echo "VersionName=$VERSION_NAME"
+          echo "Building Version Code: $VERSION_CODE"
+          echo "Building Version Name: $VERSION_NAME"
 
           ./gradlew bundleRelease \
             -PversionCode=$VERSION_CODE \
             -PversionName=$VERSION_NAME
-      
-
       # 6. 🔐 SIGN THE AAB (CRITICAL)
       - name: Sign Release AAB
         uses: r0adkll/sign-android-release@v1
